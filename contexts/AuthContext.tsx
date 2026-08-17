@@ -1,42 +1,132 @@
 'use client'
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import type { Session } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+import type { ProfileRow } from '@/lib/database.types'
 
-type UserRole = 'jobseeker' | 'agent' | 'admin' | null
-type User = {
+export type UserRole = 'jobseeker' | 'agent' | 'admin'
+
+export interface AuthUser {
   id: string
   name: string
   email: string
   role: UserRole
-  referralCode?: string
-  premium?: boolean
+  referralCode: string
+  premium: boolean
+  premiumExpiresAt: string | null
+  bankConnected: boolean
+}
+
+interface AuthResult {
+  error: string | null
+}
+
+interface SignUpResult extends AuthResult {
+  needsConfirmation: boolean
 }
 
 interface AuthContextType {
-  user: User | null
-  login: (role: UserRole, email?: string) => void
-  logout: () => void
-  upgradeToPremium: () => void
+  user: AuthUser | null
+  authLoading: boolean
+  login: (email: string, password: string) => Promise<AuthResult>
+  signUp: (email: string, password: string, fullName: string) => Promise<SignUpResult>
+  logout: () => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function toAuthUser(session: Session, profile: ProfileRow): AuthUser {
+  return {
+    id: session.user.id,
+    name: profile.full_name || profile.email.split('@')[0],
+    email: profile.email,
+    role: profile.role,
+    referralCode: profile.referral_code,
+    premium: profile.premium_expires_at
+      ? new Date(profile.premium_expires_at).getTime() > Date.now()
+      : false,
+    premiumExpiresAt: profile.premium_expires_at,
+    bankConnected: Boolean(profile.bank_connected_at && profile.bank_account_number),
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const mounted = useRef(true)
 
-  const login = (role: UserRole, email = 'demo@jobkar.in') => {
-    const id = Math.random().toString(36).substring(2, 10)
-    const referralCode = `JK-${id.toUpperCase()}`
-    setUser({ id, name: email.split('@')[0], email, role, referralCode, premium: false })
-  }
+  const fetchProfile = useCallback(async (session: Session) => {
+    // Retry once: the signup trigger can land a beat after the first login.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single()
+      if (!error && profile) {
+        if (mounted.current) setUser(toAuthUser(session, profile))
+        return
+      }
+      if (attempt === 0) await new Promise((r) => setTimeout(r, 500))
+    }
+    if (mounted.current) {
+      setUser(null)
+      setAuthLoading(false)
+    }
+  }, [])
 
-  const logout = () => setUser(null)
+  useEffect(() => {
+    mounted.current = true
 
-  const upgradeToPremium = () => {
-    setUser(prev => prev ? { ...prev, premium: true } : prev)
-  }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Keep the callback sync (Supabase recommendation); do async work here.
+      if (session) {
+        fetchProfile(session).finally(() => {
+          if (mounted.current) setAuthLoading(false)
+        })
+      } else {
+        if (mounted.current) {
+          setUser(null)
+          setAuthLoading(false)
+        }
+      }
+    })
+
+    return () => {
+      mounted.current = false
+      subscription.unsubscribe()
+    }
+  }, [fetchProfile])
+
+  const login = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    return { error: error?.message ?? null }
+  }, [])
+
+  const signUp = useCallback(async (email: string, password: string, fullName: string): Promise<SignUpResult> => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName } }, // handle_new_user trigger reads this
+    })
+    return {
+      error: error?.message ?? null,
+      needsConfirmation: !error && !data.session,
+    }
+  }, [])
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut()
+  }, [])
+
+  const refreshProfile = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session) await fetchProfile(session)
+  }, [fetchProfile])
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, upgradeToPremium }}>
+    <AuthContext.Provider value={{ user, authLoading, login, signUp, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )

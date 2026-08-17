@@ -1,8 +1,7 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { PremiumProvider } from '@/contexts/PremiumContext'
-import { DataProvider } from '@/contexts/DataContext'
+import { ToastProvider } from '@/lib/toast'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
@@ -22,13 +21,11 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
         <AuthProvider>
-          <PremiumProvider>
-            <DataProvider>
-              <Navbar />
-              <main className="pt-16">{children}</main>
-              <Footer />
-            </DataProvider>
-          </PremiumProvider>
+          <ToastProvider>
+            <Navbar />
+            <main className="pt-16">{children}</main>
+            <Footer />
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>
