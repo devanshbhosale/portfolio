@@ -85,7 +85,7 @@ export default function Analytics() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v: number) => `₹${v}`} width={60} />
-                <Tooltip formatter={(v: number | string) => `₹${Number(v).toFixed(2)}`} />
+                <Tooltip formatter={(v) => `₹${Number(v).toFixed(2)}`} />
                 <Bar dataKey="revenue" fill="#2563EB" radius={[4, 4, 0, 0]} name="Revenue" />
               </BarChart>
             </ResponsiveContainer>

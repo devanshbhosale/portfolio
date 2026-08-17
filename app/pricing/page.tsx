@@ -119,6 +119,10 @@ export default function PricingPage() {
 
   const handleCheckout = async () => {
     if (!selectedPlan) return
+    if (!user) {
+      router.push('/login?next=/pricing')
+      return
+    }
     setBusy(true)
     setError(null)
 

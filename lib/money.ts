@@ -53,5 +53,6 @@ export function commissionFor(amountRupees: number, tier: number): number {
 }
 
 export function round2(n: number): number {
-  return Math.round(n * 100) / 100
+  // Use toFixed with a tiny epsilon to handle floating-point edge cases (e.g., 1.005)
+  return Number((n + 1e-10).toFixed(2))
 }

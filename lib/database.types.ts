@@ -5,15 +5,16 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type PlanName = 'Weekly' | 'Monthly' | 'Quarterly' | 'Annual'
+export type UserRole = 'jobseeker' | 'agent' | 'admin'
 export type JobStatus = 'pending_review' | 'approved' | 'rejected'
 export type CommissionStatus = 'none' | 'pending' | 'available' | 'withdrawn' | 'voided'
 export type WithdrawalStatus = 'pending' | 'approved' | 'rejected'
 
-export interface ProfileRow {
+export type ProfileRow = {
   id: string
   email: string
   full_name: string | null
-  role: 'jobseeker' | 'agent' | 'admin'
+  role: UserRole
   referral_code: string
   premium_plan: PlanName | null
   premium_expires_at: string | null
@@ -24,7 +25,7 @@ export interface ProfileRow {
   created_at: string
 }
 
-export interface JobListingRow {
+export type JobListingRow = {
   id: string
   agent_id: string | null
   source_link: string | null
@@ -47,7 +48,7 @@ export interface JobListingRow {
   approved_by: string | null
 }
 
-export interface PremiumPurchaseRow {
+export type PremiumPurchaseRow = {
   id: string
   user_id: string
   plan: PlanName
@@ -62,7 +63,7 @@ export interface PremiumPurchaseRow {
   created_at: string
 }
 
-export interface WithdrawalRequestRow {
+export type WithdrawalRequestRow = {
   id: string
   user_id: string
   amount: number
@@ -75,7 +76,7 @@ export interface WithdrawalRequestRow {
   processed_at: string | null
 }
 
-export interface SiteSettingsRow {
+export type SiteSettingsRow = {
   id: number
   price_weekly: number
   price_monthly: number
@@ -89,7 +90,7 @@ export interface SiteSettingsRow {
 }
 
 /** Safe columns of approved jobs — what the public_jobs view exposes. */
-export interface PublicJob {
+export type PublicJob = {
   id: string
   title: string
   company: string
@@ -107,7 +108,7 @@ export interface PublicJob {
   approved_at: string | null
 }
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       profiles: {
@@ -117,14 +118,30 @@ export interface Database {
           referral_code?: string
         }
         Update: Partial<Omit<ProfileRow, 'id' | 'created_at'>>
+        Relationships: []
       }
       job_listings: {
         Row: JobListingRow
-        Insert: Omit<JobListingRow, 'id' | 'created_at'> & {
+        Insert: Omit<JobListingRow, 'id' | 'created_at' | 'agent_id' | 'source_link' | 'location' | 'salary_range' | 'experience' | 'description' | 'contact_info' | 'tags' | 'is_premium' | 'is_featured' | 'admin_notes' | 'approved_at' | 'approved_by' | 'featured_until'> & {
           id?: string
           created_at?: string
+          agent_id?: string | null
+          source_link?: string | null
+          location?: string | null
+          salary_range?: string | null
+          experience?: string | null
+          description?: string | null
+          contact_info?: string | null
+          tags?: string[] | null
+          is_premium?: boolean | null
+          is_featured?: boolean | null
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          featured_until?: string | null
         }
         Update: Partial<Omit<JobListingRow, 'id' | 'created_at'>>
+        Relationships: []
       }
       premium_purchases: {
         Row: PremiumPurchaseRow
@@ -133,23 +150,28 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Omit<PremiumPurchaseRow, 'id' | 'created_at'>>
+        Relationships: []
       }
       withdrawal_requests: {
         Row: WithdrawalRequestRow
-        Insert: Omit<WithdrawalRequestRow, 'id' | 'created_at' | 'processed_at'> & {
+        Insert: Omit<WithdrawalRequestRow, 'id' | 'created_at' | 'processed_at' | 'status' | 'admin_notes'> & {
           id?: string
           created_at?: string
+          status?: WithdrawalStatus
+          admin_notes?: string | null
         }
         Update: Partial<Omit<WithdrawalRequestRow, 'id' | 'created_at'>>
+        Relationships: []
       }
       site_settings: {
         Row: SiteSettingsRow
         Insert: Partial<SiteSettingsRow> & { id?: number }
         Update: Partial<Omit<SiteSettingsRow, 'id'>>
+        Relationships: []
       }
     }
     Views: {
-      public_jobs: { Row: PublicJob }
+      public_jobs: { Row: PublicJob; Relationships: [] }
     }
     Functions: {
       is_agent: { Args: Record<string, never>; Returns: boolean }
