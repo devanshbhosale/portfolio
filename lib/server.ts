@@ -55,3 +55,12 @@ export function isPremiumActive(profile: Pick<ProfileRow, 'premium_expires_at'> 
   if (!profile?.premium_expires_at) return false
   return new Date(profile.premium_expires_at).getTime() > Date.now()
 }
+
+/** Safe JSON body read: null on malformed JSON instead of a thrown 500. */
+export async function readJson(req: Request): Promise<unknown> {
+  try {
+    return await req.json()
+  } catch {
+    return null
+  }
+}
