@@ -3,22 +3,8 @@ import { adminClient, getAuthedProfile, readJson } from '@/lib/server'
 import { getSiteSettings } from '@/lib/settings'
 import { withdrawalSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
-import type { PremiumPurchaseRow, WithdrawalRequestRow } from '@/lib/database.types'
-
-const HOLDING_PERIOD_MS = 15 * 60 * 1000
-
-/** Commission the referrer can actually spend right now: released
- *  commissions plus pending ones past the 15-minute holding period. */
-export function availableCommission(purchases: Pick<PremiumPurchaseRow, 'commission_amount' | 'withdrawn_amount' | 'commission_status' | 'created_at'>[], now = Date.now()) {
-  return purchases
-    .filter(
-      (p) =>
-        (p.commission_status === 'available' ||
-          (p.commission_status === 'pending' && now - new Date(p.created_at).getTime() >= HOLDING_PERIOD_MS)) &&
-        p.commission_amount > p.withdrawn_amount,
-    )
-    .reduce((sum, p) => sum + (p.commission_amount - p.withdrawn_amount), 0)
-}
+import { availableCommission } from '@/lib/money'
+import type { WithdrawalRequestRow } from '@/lib/database.types'
 
 export async function POST(req: Request) {
   const profile = await getAuthedProfile()
