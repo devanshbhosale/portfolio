@@ -17,6 +17,7 @@ export default function PendingJobs() {
   const [jobs, setJobs] = useState<JobListingRow[] | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [states, setStates] = useState<Record<string, ReviewState>>({})
+  const [featuredDays, setFeaturedDays] = useState(7)
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -29,6 +30,12 @@ export default function PendingJobs() {
 
   useEffect(() => {
     load()
+    fetch('/api/settings')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s: { featuredDays?: number } | null) => {
+        if (s?.featuredDays) setFeaturedDays(s.featuredDays)
+      })
+      .catch(() => {})
   }, [load])
 
   const stateFor = (id: string): ReviewState => states[id] ?? { isPremium: false, isFeatured: false, note: '' }
@@ -40,7 +47,7 @@ export default function PendingJobs() {
       return
     }
     setBusyId(job.id)
-    const featuredUntil = s.isFeatured ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null
+    const featuredUntil = s.isFeatured ? new Date(Date.now() + featuredDays * 24 * 60 * 60 * 1000).toISOString() : null
     const { error } = await supabase
       .from('job_listings')
       .update(

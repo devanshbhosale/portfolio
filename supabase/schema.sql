@@ -278,7 +278,9 @@ $$;
 
 -- Withdrawal approval. Admin-only. Consumes available commissions
 -- oldest-first as a ledger (partial consumption supported), so a
--- withdrawal can never take more than is available.
+-- withdrawal can never take more than is available. "Available" matches
+-- the lazy 15-minute rule used by the app: pending commissions older than
+-- 15 minutes count (the cron only formalizes the status flip).
 create or replace function public.approve_withdrawal(p_id uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
@@ -300,7 +302,10 @@ begin
   select sum(commission_amount - withdrawn_amount) into v_left
   from public.premium_purchases
   where referrer_user_id = w.user_id
-    and commission_status = 'available'
+    and (
+      commission_status = 'available'
+      or (commission_status = 'pending' and created_at <= now() - interval '15 minutes')
+    )
     and commission_amount > withdrawn_amount;
   v_left := coalesce(v_left, 0);
 
@@ -313,7 +318,10 @@ begin
     select id, (commission_amount - withdrawn_amount) as remaining
     from public.premium_purchases
     where referrer_user_id = w.user_id
-      and commission_status = 'available'
+      and (
+        commission_status = 'available'
+        or (commission_status = 'pending' and created_at <= now() - interval '15 minutes')
+      )
       and commission_amount > withdrawn_amount
     order by created_at
   loop

@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Copy, CheckCircle2, Gift, Wallet, AlertCircle, Banknote, ArrowUpRight, Clock } from 'lucide-react'
+import { Copy, CheckCircle2, Gift, Wallet, AlertCircle, Banknote, Clock } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/lib/toast'
 import Button from '@/components/ui/Button'

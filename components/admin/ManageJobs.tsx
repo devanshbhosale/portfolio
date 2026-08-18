@@ -39,6 +39,7 @@ export default function ManageJobs() {
   const [search, setSearch] = useState('')
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [saving, setSaving] = useState(false)
+  const [featuredDays, setFeaturedDays] = useState(7)
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -51,6 +52,12 @@ export default function ManageJobs() {
 
   useEffect(() => {
     load()
+    fetch('/api/settings')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s: { featuredDays?: number } | null) => {
+        if (s?.featuredDays) setFeaturedDays(s.featuredDays)
+      })
+      .catch(() => {})
   }, [load])
 
   const filtered = useMemo(
@@ -97,7 +104,7 @@ export default function ManageJobs() {
       tags: values.tags.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 8),
       is_premium: values.is_premium,
       is_featured: editor.extra.isFeatured,
-      featured_until: editor.extra.isFeatured ? new Date().toISOString() : null,
+      featured_until: editor.extra.isFeatured ? new Date(Date.now() + featuredDays * 24 * 60 * 60 * 1000).toISOString() : null,
       status: editor.extra.status,
       expires_at: editor.extra.expiresAt ? new Date(`${editor.extra.expiresAt}T23:59:59`).toISOString() : null,
     }
