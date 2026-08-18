@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { timingSafeEqual } from 'node:crypto'
 import { adminClient } from '@/lib/server'
 
 export const maxDuration = 60
@@ -9,7 +10,13 @@ export const maxDuration = 60
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET
   const auth = req.headers.get('authorization')
-  if (!secret || auth !== `Bearer ${secret}`) {
+  const expected = secret ? `Bearer ${secret}` : null
+  const ok =
+    expected !== null &&
+    auth !== null &&
+    auth.length === expected.length &&
+    timingSafeEqual(Buffer.from(auth), Buffer.from(expected))
+  if (!ok) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

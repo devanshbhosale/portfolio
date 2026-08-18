@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import dns from 'node:dns/promises'
 import net from 'node:net'
+import { Agent } from 'undici'
 import * as cheerio from 'cheerio'
 import { getAuthedProfile, readJson } from '@/lib/server'
 import { parseLinkSchema } from '@/lib/validation'
@@ -16,36 +17,56 @@ function blockedIps(): net.BlockList {
   for (const [subnet, prefix] of [
     ['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8],
     ['169.254.0.0', 16], ['172.16.0.0', 12], ['192.168.0.0', 16],
+    ['198.18.0.0', 15], ['192.0.0.0', 24], ['192.0.2.0', 24],
   ] as const) {
     bl.addSubnet(subnet, prefix, 'ipv4')
   }
-  bl.addSubnet('::', 128, 'ipv6')            // unspecified
-  bl.addSubnet('::1', 128, 'ipv6')           // loopback
-  bl.addSubnet('fc00::', 7, 'ipv6')          // unique local
-  bl.addSubnet('fe80::', 10, 'ipv6')         // link local
-  bl.addSubnet('::ffff:0:0', 96, 'ipv6')     // ipv4-mapped
+  for (const [subnet, prefix] of [
+    ['::', 128], ['::1', 128], ['fc00::', 7], ['fe80::', 10],
+    ['::ffff:0:0', 96], ['64:ff9b::', 96], ['::ffff:0:0:0', 96],
+  ] as const) {
+    bl.addSubnet(subnet, prefix, 'ipv6')
+  }
   return bl
 }
 
-async function assertPublicHost(hostname: string) {
+/** Resolve and verify every address is public. Returns the verified
+ *  addresses so the fetch can be PINNED to them (closes the DNS-rebinding
+ *  window between the check and the connection). */
+async function resolvePublic(hostname: string): Promise<string[]> {
   const results = await dns.lookup(hostname, { all: true })
   const bl = blockedIps()
-  for (const { address } of results) {
+  const addresses = results.map((r) => r.address)
+  if (addresses.length === 0) throw new Error('Could not resolve host')
+  for (const address of addresses) {
     if (bl.check(address)) {
       throw new Error('Target host is not allowed')
     }
   }
+  return addresses
 }
 
 async function fetchCapped(url: string): Promise<Response> {
   let current = url
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    await assertPublicHost(new URL(current).hostname)
+    // Resolve once, verify, then pin the fetch to exactly those addresses
+    // via a custom undici Agent — the check and the connection see the
+    // same IPs, so DNS rebinding cannot switch them in between.
+    const addresses = await resolvePublic(new URL(current).hostname)
+    const agent = new Agent({
+      connect: {
+        // Pin the connection to the pre-verified addresses.
+        lookup: (_hostname, _opts, cb) =>
+          cb(null, addresses.map((address) => ({ address, family: net.isIPv6(address) ? 6 : 4 }))),
+      },
+    })
+
     const res = await fetch(current, {
       redirect: 'manual',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; JobkarAgent/1.0)' },
-    })
+      dispatcher: agent,
+    } as RequestInit)
     if ([301, 302, 303, 307, 308].includes(res.status)) {
       const location = res.headers.get('location')
       if (!location) throw new Error('Redirect without location')

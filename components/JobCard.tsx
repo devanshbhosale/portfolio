@@ -48,9 +48,9 @@ export default function JobCard({ job, index = 0, isPremium = false }: JobCardPr
           {job.experience && <span className="inline-flex items-center gap-1"><Briefcase size={14} aria-hidden /> {job.experience}</span>}
           {job.salary_range && <span className="inline-flex items-center gap-1"><Clock size={14} aria-hidden /> {job.salary_range}</span>}
         </div>
-        {(job.tags?.length ?? 0) > 0 && (
+        {(job.tags ?? []).length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {job.tags!.slice(0, 5).map((tag) => (
+            {(job.tags ?? []).slice(0, 5).map((tag) => (
               <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700">
                 <Tag size={12} aria-hidden /> {tag}
               </span>

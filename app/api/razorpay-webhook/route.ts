@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { adminClient } from '@/lib/server'
 import { getSiteSettings } from '@/lib/settings'
-import type { PlanName } from '@/lib/database.types'
+import { PLAN_NAMES } from '@/lib/plans'
 
 interface WebhookPayment {
   id: string
@@ -15,7 +15,7 @@ interface WebhookPayload {
   event: string
   payload?: {
     payment?: { entity?: WebhookPayment }
-    refund?: { entity?: { payment_id?: string } }
+    refund?: { entity?: { payment_id?: string; amount?: number } }
   }
 }
 
@@ -55,9 +55,14 @@ export async function POST(req: Request) {
         console.error(`[webhook] payment ${payment.id} captured without userId/plan notes`)
         return NextResponse.json({ received: true })
       }
+      const planName = PLAN_NAMES.find((n) => n === plan)
+      if (!planName) {
+        console.error(`[webhook] payment ${payment.id} has unknown plan: ${plan}`)
+        return NextResponse.json({ received: true })
+      }
 
       const settings = await getSiteSettings()
-      const expectedAmount = settings.prices[plan as PlanName]
+      const expectedAmount = settings.prices[planName]
       if (!expectedAmount || payment.amount !== expectedAmount || payment.currency !== 'INR') {
         console.error(
           `[webhook] payment ${payment.id} amount/currency mismatch: got ${payment.amount} ${payment.currency}, expected ${expectedAmount} INR`,
@@ -67,7 +72,7 @@ export async function POST(req: Request) {
 
       const { error } = await adminClient().rpc('process_payment', {
         p_user_id: userId,
-        p_plan: plan,
+        p_plan: planName,
         p_amount: payment.amount / 100,
         p_payment_id: payment.id,
         p_order_id: payment.order_id ?? null,
@@ -75,9 +80,13 @@ export async function POST(req: Request) {
       })
       if (error) console.error(`[webhook] process_payment failed for ${payment.id}:`, error)
     } else if (payload.event === 'refund.processed') {
-      const paymentId = payload.payload?.refund?.entity?.payment_id
+      const refund = payload.payload?.refund?.entity
+      const paymentId = refund?.payment_id
       if (paymentId) {
-        const { error } = await adminClient().rpc('void_commission', { p_payment_id: paymentId })
+        const { error } = await adminClient().rpc('void_commission', {
+          p_payment_id: paymentId,
+          p_refund_amount: (refund?.amount ?? 0) / 100,
+        })
         if (error) console.error(`[webhook] void_commission failed for ${paymentId}:`, error)
       }
     } else if (payload.event === 'payment.failed') {

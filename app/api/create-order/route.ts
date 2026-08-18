@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       amount,
       currency: 'INR',
       receipt: `r_${user.id}_${Date.now()}`.slice(0, 40),
-      notes: { userId: user.id, plan, orderAmount: amount, referralCode: validReferral },
+      notes: { userId: user.id, plan, orderAmount: String(amount), referralCode: validReferral },
     })
     return NextResponse.json({ id: order.id, amount: order.amount, currency: order.currency })
   } catch (err) {

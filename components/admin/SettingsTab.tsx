@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Button from '@/components/ui/Button'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/lib/toast'
+import { updateSettingsSchema } from '@/lib/validation'
 import { DEFAULT_PRICES_PAISE, DEFAULT_COMMISSION_TIERS, DEFAULT_WITHDRAW_THRESHOLD, DEFAULT_JOB_TTL_DAYS, DEFAULT_FEATURED_DAYS, PLAN_NAMES, rupees } from '@/lib/plans'
 import type { PlanName, SiteSettingsRow } from '@/lib/database.types'
 
@@ -52,33 +53,38 @@ export default function SettingsTab() {
     const price = (v: string) => Math.round(Number(v) * 100)
     const pct = (v: string) => Number(v) / 100
     const values = {
-      p_price_weekly: price(form.prices.Weekly),
-      p_price_monthly: price(form.prices.Monthly),
-      p_price_quarterly: price(form.prices.Quarterly),
-      p_price_annual: price(form.prices.Annual),
-      p_commission_tiers: {
+      price_weekly: price(form.prices.Weekly),
+      price_monthly: price(form.prices.Monthly),
+      price_quarterly: price(form.prices.Quarterly),
+      price_annual: price(form.prices.Annual),
+      commission_tiers: {
         Weekly: pct(form.tiers.Weekly),
         Monthly: pct(form.tiers.Monthly),
         Quarterly: pct(form.tiers.Quarterly),
         Annual: pct(form.tiers.Annual),
       },
-      p_withdraw_threshold: Number(form.withdrawThreshold),
-      p_job_ttl_days: Number(form.jobTtlDays),
-      p_featured_days: Number(form.featuredDays),
+      withdraw_threshold: Number(form.withdrawThreshold),
+      job_ttl_days: Number(form.jobTtlDays),
+      featured_days: Number(form.featuredDays),
     }
-    if (
-      !Object.values(values.p_commission_tiers).every((t) => t >= 0 && t <= 0.9) ||
-      values.p_withdraw_threshold < 1 ||
-      values.p_job_ttl_days < 1 ||
-      values.p_featured_days < 1 ||
-      Object.values(values).some((v) => typeof v === 'number' && !Number.isFinite(v))
-    ) {
-      toast('Check the values — percentages 0–90, others positive.', 'error')
+    const parsed = updateSettingsSchema.safeParse(values)
+    if (!parsed.success) {
+      toast(parsed.error.issues[0]?.message ?? 'Check the values.', 'error')
       return
     }
+    const v = parsed.data
 
     setBusy(true)
-    const { error } = await supabase.rpc('update_site_settings', values)
+    const { error } = await supabase.rpc('update_site_settings', {
+      p_price_weekly: v.price_weekly,
+      p_price_monthly: v.price_monthly,
+      p_price_quarterly: v.price_quarterly,
+      p_price_annual: v.price_annual,
+      p_commission_tiers: v.commission_tiers,
+      p_withdraw_threshold: v.withdraw_threshold,
+      p_job_ttl_days: v.job_ttl_days,
+      p_featured_days: v.featured_days,
+    })
     setBusy(false)
     if (error) {
       toast('Could not save settings.', 'error')

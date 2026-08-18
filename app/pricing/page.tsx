@@ -72,10 +72,11 @@ export default function PricingPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((s: { prices?: Record<PlanName, number> } | null) => {
         if (!s?.prices) return
+        const prices = s.prices  // const so the closure keeps the narrowing
         setPlans(
           PLAN_NAMES.map((name) => ({
             name,
-            price: rupees(s.prices![name]),
+            price: rupees(prices[name]),
             originalPrice: ORIGINAL_PRICES[name],
             perks: PLAN_PERKS[name],
           })),

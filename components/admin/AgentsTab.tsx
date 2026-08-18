@@ -29,11 +29,12 @@ export default function AgentsTab() {
       .in('agent_id', rows.map((r) => r.id))
     const counts = new Map<string, { total: number; approved: number; pending: number }>()
     for (const j of jobs ?? []) {
-      const c = counts.get(j.agent_id as string) ?? { total: 0, approved: 0, pending: 0 }
+      const agentId = j.agent_id ?? ''  // FK is on delete set null
+      const c = counts.get(agentId) ?? { total: 0, approved: 0, pending: 0 }
       c.total++
       if (j.status === 'approved') c.approved++
       if (j.status === 'pending_review') c.pending++
-      counts.set(j.agent_id as string, c)
+      counts.set(agentId, c)
     }
     setAgents(
       rows.map((r) => ({

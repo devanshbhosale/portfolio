@@ -60,6 +60,8 @@ export type PremiumPurchaseRow = {
   commission_amount: number
   withdrawn_amount: number
   commission_status: CommissionStatus
+  premium_granted_until: string | null
+  refunded_at: string | null
   created_at: string
 }
 
@@ -82,7 +84,7 @@ export type SiteSettingsRow = {
   price_monthly: number
   price_quarterly: number
   price_annual: number
-  commission_tiers: Record<string, number>
+  commission_tiers: Record<PlanName, number>
   withdraw_threshold: number
   job_ttl_days: number
   featured_days: number
@@ -113,9 +115,14 @@ export type Database = {
     Tables: {
       profiles: {
         Row: ProfileRow
-        Insert: Omit<ProfileRow, 'created_at' | 'referral_code'> & {
+        Insert: Omit<ProfileRow, 'created_at' | 'referral_code' | 'role' | 'bank_holder_name' | 'bank_account_number' | 'bank_ifsc' | 'bank_connected_at'> & {
           created_at?: string
           referral_code?: string
+          role?: UserRole
+          bank_holder_name?: string | null
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
+          bank_connected_at?: string | null
         }
         Update: Partial<Omit<ProfileRow, 'id' | 'created_at'>>
         Relationships: []
@@ -145,12 +152,32 @@ export type Database = {
       }
       premium_purchases: {
         Row: PremiumPurchaseRow
-        Insert: Omit<PremiumPurchaseRow, 'id' | 'created_at' | 'commission_amount' | 'withdrawn_amount' | 'commission_status'> & {
+        Insert: Omit<PremiumPurchaseRow, 'id' | 'created_at' | 'commission_amount' | 'withdrawn_amount' | 'commission_status' | 'premium_granted_until' | 'refunded_at' | 'order_id' | 'referral_code_used' | 'referrer_user_id'> & {
           id?: string
           created_at?: string
+          order_id?: string | null
+          referral_code_used?: string | null
+          referrer_user_id?: string | null
+          premium_granted_until?: string | null
+          refunded_at?: string | null
         }
         Update: Partial<Omit<PremiumPurchaseRow, 'id' | 'created_at'>>
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'premium_purchases_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'premium_purchases_referrer_user_id_fkey'
+            columns: ['referrer_user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       }
       withdrawal_requests: {
         Row: WithdrawalRequestRow
@@ -190,7 +217,8 @@ export type Database = {
       update_own_profile: { Args: { p_holder: string; p_account: string; p_ifsc: string }; Returns: undefined }
       release_commissions: { Args: Record<string, never>; Returns: number }
       approve_withdrawal: { Args: { p_id: string }; Returns: Json }
-      void_commission: { Args: { p_payment_id: string }; Returns: undefined }
+      request_withdrawal: { Args: { p_amount: number }; Returns: Json }
+      void_commission: { Args: { p_payment_id: string; p_refund_amount: number }; Returns: undefined }
       update_site_settings: {
         Args: {
           p_price_weekly: number

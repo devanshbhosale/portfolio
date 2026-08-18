@@ -49,14 +49,6 @@ export const withdrawalSchema = z.object({
 
 export const renewJobSchema = z.object({ jobId: z.string().uuid() })
 
-export const approveJobSchema = z.object({
-  jobId: z.string().uuid(),
-  approved: z.boolean(),
-  isPremium: z.boolean().optional(),
-  isFeatured: z.boolean().optional(),
-  note: z.string().trim().max(500).optional().default(''),
-})
-
 export const updateSettingsSchema = z.object({
   price_weekly: z.coerce.number().int().min(100).max(10_000_000),
   price_monthly: z.coerce.number().int().min(100).max(10_000_000),

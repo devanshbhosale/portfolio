@@ -239,11 +239,14 @@ With `npm run dashboard` running:
 
 ## Security Notes
 
-- **RLS** on all tables; public reads only via `public_jobs` view (safe columns).
-- **SSRF hardening** on parse-link: scheme allowlist, post-DNS private-IP block (including `::ffff:`), redirect cap, 10s timeout, 2MB stream cap, HTML-only.
-- **Webhook**: raw-body HMAC with `timingSafeEqual`; amount verified against `site_settings`; idempotent on unique `payment_id`.
-- **Money math**: prices always server-side; commission tiers server-side; withdrawal balance checked server-side (available − pending ≥ amount, ≥ threshold).
-- **No service-role key** on friend's machine or in the repo.
+- **RLS** on all tables; public reads only via `public_jobs` view (safe columns) — the base `job_listings` table has **no public read policy**, so `contact_info`/`admin_notes` can't leak. Agents may only insert `pending_review` rows (moderation can't be bypassed).
+- **SSRF hardening** on parse-link: scheme allowlist, post-DNS private-IP block (incl. IPv6-mapped, NAT64, benchmark ranges), **DNS pinning** via a custom undici Agent (check and connection see the same IPs — closes the rebinding window), redirect cap, 10s timeout, 2MB stream cap, HTML-only.
+- **Webhook**: raw-body HMAC with `timingSafeEqual`; amount verified against `site_settings`; idempotent on unique `payment_id`; full refunds void commissions and revoke only the refunded grant window (partial refunds change nothing).
+- **Withdrawal integrity**: `request_withdrawal` RPC locks the referrer's commission rows and validates threshold/bank/balance in one transaction (no concurrent overdraw); `approve_withdrawal` locks rows too, re-checks the ledger mid-loop, and fails loudly if consumption can't complete (no double-spend).
+- **Money math**: prices always server-side; commission tiers server-side; Razorpay order notes are strings (API requirement).
+- **No service-role key** on friend's machine or in the repo; cron guarded by `CRON_SECRET` (timing-safe compare).
+- **XSS**: `source_link` rendered only through `safeExternalUrl()` (http/https allowlist) — React does not sanitize `href`; DB-level check constraint rejects non-http(s) links; scraped descriptions render as escaped text (no `dangerouslySetInnerHTML` anywhere).
+- **CSV export** neutralizes formula-injection cells (`= + - @` prefixed with `'`).
 
 ## License
 

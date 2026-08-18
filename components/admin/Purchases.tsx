@@ -38,6 +38,12 @@ export default function Purchases() {
   const exportCsv = () => {
     if (!rows) return
     const header = 'Date,Plan,Amount,Payment ID,Order ID,Buyer,Referral Code,Referrer,Commission,Commission Status'
+    // Prefix formula-signature cells to neutralize CSV injection (= + - @ tab CR)
+    const cell = (v: string | number) => {
+      const s = String(v)
+      const sanitized = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s
+      return `"${sanitized.replace(/"/g, '""')}"`
+    }
     const lines = rows.map((r) =>
       [
         new Date(r.created_at).toISOString(),
@@ -51,7 +57,7 @@ export default function Purchases() {
         r.commission_amount,
         r.commission_status,
       ]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .map(cell)
         .join(','),
     )
     const blob = new Blob([`\uFEFF${[header, ...lines].join('\n')}`], { type: 'text/csv;charset=utf-8' })

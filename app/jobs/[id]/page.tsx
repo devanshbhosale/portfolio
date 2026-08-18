@@ -4,10 +4,13 @@ import type { Metadata } from 'next'
 import { MapPin, Briefcase, Clock, Tag, ArrowLeft, Lock, Star, Phone } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { adminClient, getAuthedProfile, isPremiumActive } from '@/lib/server'
+import { safeExternalUrl } from '@/lib/safe-url'
 import type { PublicJob } from '@/lib/database.types'
 
 async function getJob(id: string) {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null
+  // public_jobs is the approved + unexpired projection, so this lookup
+  // can never return a pending/rejected/expired listing.
   const { data } = await adminClient().from('public_jobs').select('*').eq('id', id).single()
   return (data as PublicJob | null) ?? null
 }
@@ -39,6 +42,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   }
 
   const featured = Boolean(job.is_featured && (!job.featured_until || new Date(job.featured_until).getTime() > Date.now()))
+  const safeSourceLink = safeExternalUrl(job.source_link)
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
@@ -72,9 +76,9 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           {job.salary_range && <span className="inline-flex items-center gap-1"><Clock size={15} aria-hidden /> {job.salary_range}</span>}
         </div>
 
-        {(job.tags?.length ?? 0) > 0 && (
+        {(job.tags ?? []).length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
-            {job.tags!.map((tag) => (
+            {(job.tags ?? []).map((tag) => (
               <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700">
                 <Tag size={12} aria-hidden /> {tag}
               </span>
@@ -107,9 +111,9 @@ export default async function JobDetailPage({ params }: { params: { id: string }
               ) : (
                 <p className="mt-2 text-gray-600">Contact details not provided for this listing.</p>
               )}
-              {job.source_link && (
+              {safeSourceLink && (
                 <a
-                  href={job.source_link}
+                  href={safeSourceLink}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   className="inline-flex items-center gap-1 mt-4 text-primary-600 hover:text-primary-700 font-medium"

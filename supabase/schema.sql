@@ -43,7 +43,8 @@ create table public.job_listings (
   admin_notes text,
   created_at timestamptz default now(),
   approved_at timestamptz,
-  approved_by uuid references public.profiles(id)
+  approved_by uuid references public.profiles(id),
+  check (source_link is null or source_link ~* '^https?://')  -- no javascript:/data: hrefs
 );
 
 create table public.premium_purchases (
@@ -59,6 +60,8 @@ create table public.premium_purchases (
   withdrawn_amount numeric not null default 0 check (withdrawn_amount >= 0),
   commission_status text not null default 'none'
     check (commission_status in ('none', 'pending', 'available', 'withdrawn', 'voided')),
+  premium_granted_until timestamptz,                    -- expiry this payment granted (for refund attribution)
+  refunded_at timestamptz,                              -- set when a full refund voids this purchase
   created_at timestamptz default now()
 );
 
@@ -123,12 +126,17 @@ create policy "profiles admin all" on public.profiles
 -- No update-own policy: bank details change only via update_own_profile RPC.
 
 -- job_listings
-create policy "jobs public read approved" on public.job_listings
-  for select using (status = 'approved' and (expires_at is null or expires_at > now()));
+-- Public reads go ONLY through the public_jobs view (safe columns).
+-- No public policy on the base table: contact_info/admin_notes must not
+-- be readable anonymously (RLS is row-level, not column-level).
 create policy "jobs agents read own" on public.job_listings
   for select using (public.is_agent() and agent_id = auth.uid());
+-- Agents may only create pending_review drafts — moderation cannot be
+-- bypassed by inserting status='approved' directly.
 create policy "jobs agents insert own" on public.job_listings
-  for insert with check (public.is_agent() and agent_id = auth.uid());
+  for insert with check (
+    public.is_agent() and agent_id = auth.uid() and status = 'pending_review'
+  );
 create policy "jobs admin all" on public.job_listings
   for all using (public.is_admin()) with check (public.is_admin());
 
@@ -233,6 +241,12 @@ begin
       premium_expires_at = greatest(coalesce(premium_expires_at, now()), now()) + make_interval(days => v_days)
   where id = p_user_id;
 
+  -- Attribute the grant window to this payment so a refund can revoke
+  -- only what it paid for.
+  update public.premium_purchases
+  set premium_granted_until = (select premium_expires_at from public.profiles where id = p_user_id)
+  where payment_id = p_payment_id;
+
   if nullif(p_referral_code, '') is not null then
     select * into v_referrer from public.profiles
     where referral_code = p_referral_code and id <> p_user_id;
@@ -281,6 +295,8 @@ $$;
 -- withdrawal can never take more than is available. "Available" matches
 -- the lazy 15-minute rule used by the app: pending commissions older than
 -- 15 minutes count (the cron only formalizes the status flip).
+-- Commission rows are locked for the whole transaction so two concurrent
+-- approvals can never double-spend the same commission.
 create or replace function public.approve_withdrawal(p_id uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
@@ -298,6 +314,11 @@ begin
   if w.status <> 'pending' then
     return jsonb_build_object('status', 'already_' || w.status);
   end if;
+
+  -- Serialize on the referrer's commission rows.
+  perform 1 from public.premium_purchases
+  where referrer_user_id = w.user_id
+  for update;
 
   select sum(commission_amount - withdrawn_amount) into v_left
   from public.premium_purchases
@@ -332,9 +353,16 @@ begin
         commission_status = case
           when withdrawn_amount + v_take >= commission_amount then 'withdrawn'
           else 'available' end
-    where id = r.id;
+    where id = r.id and commission_amount > withdrawn_amount;  -- belt-and-braces under locks
+    if not found then
+      raise exception 'commission ledger changed concurrently';
+    end if;
     v_left := v_left - v_take;
   end loop;
+
+  if v_left > 0.001 then
+    raise exception 'could not fully consume the commission ledger';
+  end if;
 
   update public.withdrawal_requests
   set status = 'approved', processed_at = now()
@@ -344,8 +372,66 @@ begin
 end;
 $$;
 
--- Refund handling: void the commission and revoke the premium it granted.
-create or replace function public.void_commission(p_payment_id text)
+-- User-facing withdrawal request. Transactional: locks the referrer's
+-- commission rows so concurrent requests cannot overdraw the balance.
+create or replace function public.request_withdrawal(p_amount numeric)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  s public.site_settings%rowtype;
+  v_available numeric;
+  v_pending numeric;
+begin
+  if p_amount is null or p_amount <= 0 then
+    raise exception 'enter a valid amount';
+  end if;
+
+  select * into s from public.site_settings where id = 1;
+  if p_amount < s.withdraw_threshold then
+    raise exception 'minimum withdrawal is %', s.withdraw_threshold;
+  end if;
+
+  if not exists (
+    select 1 from public.profiles
+    where id = auth.uid()
+      and bank_holder_name is not null and bank_account_number is not null and bank_ifsc is not null
+  ) then
+    raise exception 'connect your bank account first';
+  end if;
+
+  perform 1 from public.premium_purchases
+  where referrer_user_id = auth.uid()
+  for update;
+
+  select coalesce(sum(commission_amount - withdrawn_amount), 0) into v_available
+  from public.premium_purchases
+  where referrer_user_id = auth.uid()
+    and (
+      commission_status = 'available'
+      or (commission_status = 'pending' and created_at <= now() - interval '15 minutes')
+    )
+    and commission_amount > withdrawn_amount;
+
+  select coalesce(sum(amount), 0) into v_pending
+  from public.withdrawal_requests
+  where user_id = auth.uid() and status = 'pending';
+
+  if p_amount > v_available - v_pending + 0.001 then
+    raise exception 'insufficient balance: available %', round(v_available - v_pending, 2);
+  end if;
+
+  insert into public.withdrawal_requests (user_id, amount, bank_holder_name, bank_account_number, bank_ifsc)
+  select auth.uid(), p_amount, bank_holder_name, bank_account_number, bank_ifsc
+  from public.profiles where id = auth.uid();
+
+  return jsonb_build_object('status', 'created');
+end;
+$$;
+
+-- Refund handling. Only a FULL refund voids the commission and revokes
+-- premium; partial refunds leave everything intact. Premium expiry is
+-- recomputed from the remaining non-refunded purchases' grant windows
+-- instead of blanket-nulling unrelated extensions.
+create or replace function public.void_commission(p_payment_id text, p_refund_amount numeric)
 returns void language plpgsql security definer set search_path = public as $$
 declare
   v_purchase public.premium_purchases%rowtype;
@@ -353,26 +439,45 @@ begin
   select * into v_purchase from public.premium_purchases where payment_id = p_payment_id;
   if v_purchase.id is null then return; end if;
 
+  if p_refund_amount + 0.01 < v_purchase.amount then
+    return; -- partial refund: no commission void, no premium revoke
+  end if;
+
   update public.premium_purchases
-  set commission_status = 'voided'
+  set commission_status = 'voided', refunded_at = now()
   where payment_id = p_payment_id and commission_status in ('pending', 'available');
 
-  update public.profiles
-  set premium_plan = null, premium_expires_at = null
-  where id = v_purchase.user_id
-    and premium_expires_at is not null
-    and premium_expires_at <= now() + make_interval(days => case v_purchase.plan
-        when 'Weekly' then 7 when 'Monthly' then 30
-        when 'Quarterly' then 90 else 365 end);
+  update public.profiles p
+  set premium_expires_at = greatest(
+        now(),
+        coalesce(
+          (select max(pg.premium_granted_until) from public.premium_purchases pg
+           where pg.user_id = p.id and pg.refunded_at is null and pg.premium_granted_until > now()),
+          now()
+        )
+      ),
+      premium_plan = case
+        when exists (
+          select 1 from public.premium_purchases pg
+          where pg.user_id = p.id and pg.refunded_at is null and pg.premium_granted_until > now()
+        ) then p.premium_plan
+        else null
+      end
+  where p.id = v_purchase.user_id;
 end;
 $$;
 
--- Admin-editable site settings (single row).
+-- Admin-editable site settings (single row). Fails loudly for non-admins
+-- instead of silently no-oping.
 create or replace function public.update_site_settings(
   p_price_weekly int, p_price_monthly int, p_price_quarterly int, p_price_annual int,
   p_commission_tiers jsonb, p_withdraw_threshold numeric,
   p_job_ttl_days int, p_featured_days int
-) returns void language sql security definer set search_path = public as $$
+) returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then
+    raise exception 'forbidden';
+  end if;
   update public.site_settings
   set price_weekly = p_price_weekly,
       price_monthly = p_price_monthly,
@@ -383,16 +488,18 @@ create or replace function public.update_site_settings(
       job_ttl_days = p_job_ttl_days,
       featured_days = p_featured_days,
       updated_at = now()
-  where id = 1 and public.is_admin();
+  where id = 1;
+end;
 $$;
 
 -- ─── RPC permissions ────────────────────────────────────────────────
 
 revoke execute on function public.process_payment(uuid, text, numeric, text, text, text) from anon, authenticated;
 revoke execute on function public.release_commissions() from anon, authenticated;
-revoke execute on function public.void_commission(text) from anon, authenticated;
+revoke execute on function public.void_commission(text, numeric) from anon, authenticated;
 grant  execute on function public.update_own_profile(text, text, text) to authenticated;
 grant  execute on function public.approve_withdrawal(uuid) to authenticated;
+grant  execute on function public.request_withdrawal(numeric) to authenticated;
 grant  execute on function public.update_site_settings(int, int, int, int, jsonb, numeric, int, int) to authenticated;
 -- service_role bypasses RLS; webhook/cron routes call with the service key.
 

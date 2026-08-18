@@ -18,10 +18,28 @@ function LoginForm() {
   const [busy, setBusy] = useState(false)
   const [redirecting, setRedirecting] = useState(false)
 
-  // Navigate by role once the session + profile land after login.
+  // Redirect only to internal paths — blocks open redirects like
+  // ?next=//evil.com or ?next=/\evil.com (router.push resolves those
+  // to external origins).
+  const isSafeNext = (value: string | null): value is string =>
+    Boolean(
+      value &&
+        value.startsWith('/') &&
+        !value.startsWith('//') &&
+        !value.includes('\\') &&
+        (() => {
+          try {
+            const u = new URL(value, window.location.origin)
+            return u.origin === window.location.origin
+          } catch {
+            return false
+          }
+        })(),
+    )
+
   useEffect(() => {
     if (!redirecting || !user) return
-    if (nextUrl && nextUrl.startsWith('/')) {
+    if (isSafeNext(nextUrl)) {
       router.push(nextUrl)
       return
     }

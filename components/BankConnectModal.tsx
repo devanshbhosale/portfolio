@@ -5,7 +5,7 @@ import { X, Landmark } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/lib/toast'
-import { accountNumberSchema, ifscSchema } from '@/lib/validation'
+import { bankConnectSchema } from '@/lib/validation'
 
 interface BankConnectModalProps {
   isOpen: boolean
@@ -22,20 +22,28 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
   const [busy, setBusy] = useState(false)
 
   const handleConnect = async () => {
-    const next: typeof errors = {}
-    if (holderName.trim().length < 2) next.holder = 'Enter the account holder name'
-    const account = accountNumberSchema.safeParse(accountNumber.trim())
-    if (!account.success) next.account = 'Account number must be 9-18 digits'
-    const ifscCheck = ifscSchema.safeParse(ifsc.trim().toUpperCase())
-    if (!ifscCheck.success) next.ifsc = 'IFSC must look like HDFC0001234'
-    setErrors(next)
-    if (Object.keys(next).length > 0) return
-
+    const parsed = bankConnectSchema.safeParse({
+      holderName: holderName.trim(),
+      accountNumber: accountNumber.trim(),
+      ifsc: ifsc.trim().toUpperCase(),
+    })
+    if (!parsed.success) {
+      const issues = parsed.error.issues
+      const fieldErrors: typeof errors = {}
+      for (const issue of issues) {
+        const field = issue.path[0] as keyof typeof errors
+        fieldErrors[field] = issue.message
+      }
+      setErrors(fieldErrors)
+      return
+    }
+    const { holderName: h, accountNumber: a, ifsc: i } = parsed.data
+    setErrors({})
     setBusy(true)
     const { error } = await supabase.rpc('update_own_profile', {
-      p_holder: holderName.trim(),
-      p_account: accountNumber.trim(),
-      p_ifsc: ifsc.trim().toUpperCase(),
+      p_holder: h,
+      p_account: a,
+      p_ifsc: i,
     })
     setBusy(false)
 

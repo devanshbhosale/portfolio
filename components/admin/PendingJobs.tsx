@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/lib/toast'
+import { safeExternalUrl } from '@/lib/safe-url'
 import type { JobListingRow } from '@/lib/database.types'
 
 interface ReviewState {
@@ -85,6 +86,7 @@ export default function PendingJobs() {
         <ul className="divide-y divide-gray-200">
           {jobs.map((job) => {
             const s = stateFor(job.id)
+            const safeLink = safeExternalUrl(job.source_link)
             return (
               <li key={job.id} className="p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -93,9 +95,9 @@ export default function PendingJobs() {
                     <p className="text-sm text-gray-500">
                       {job.company} · {job.location ?? '—'} · {job.salary_range ?? '—'}
                     </p>
-                    {job.source_link && (
-                      <a href={job.source_link} target="_blank" rel="noopener noreferrer nofollow" className="text-xs text-primary-600 hover:underline break-all">
-                        {job.source_link}
+                    {safeLink && (
+                      <a href={safeLink} target="_blank" rel="noopener noreferrer nofollow" className="text-xs text-primary-600 hover:underline break-all">
+                        {safeLink}
                       </a>
                     )}
                     {job.description && (

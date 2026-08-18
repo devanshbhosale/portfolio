@@ -24,6 +24,8 @@ function makePurchase(overrides: Partial<PremiumPurchaseRow> = {}): PremiumPurch
     commission_amount: 39.8,
     withdrawn_amount: 0,
     commission_status: 'available',
+    premium_granted_until: null,
+    refunded_at: null,
     created_at: new Date(now).toISOString(),
     ...overrides,
   }
