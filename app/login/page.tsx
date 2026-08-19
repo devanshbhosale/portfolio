@@ -43,11 +43,7 @@ function LoginForm() {
       router.push(nextUrl)
       return
     }
-    const dest =
-      user.role === 'admin' ? '/dashboard/admin'
-      : user.role === 'agent' ? '/dashboard/agent'
-      : '/dashboard'
-    router.push(dest)
+    router.push('/dashboard')
   }, [redirecting, user, nextUrl, router])
 
   const handleSubmit = async (e: React.FormEvent) => {

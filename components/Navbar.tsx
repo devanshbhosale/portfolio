@@ -10,10 +10,7 @@ export default function Navbar() {
   const { user, logout, authLoading } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const dashboardLink =
-    user?.role === 'admin' ? { href: '/dashboard/admin', label: 'Admin Panel' }
-    : user?.role === 'agent' ? { href: '/dashboard/agent', label: 'Agent Dashboard' }
-    : { href: '/dashboard', label: 'Referral' }
+  const dashboardLink = { href: '/dashboard', label: 'Referral' }
 
   const navLinks = user
     ? [

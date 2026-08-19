@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dashboard": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -13,7 +12,6 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
-    "cheerio": "^1.2.0",
     "clsx": "^2.1.0",
     "framer-motion": "^11.0.3",
     "lucide-react": "^0.344.0",
@@ -21,7 +19,6 @@
     "razorpay": "^2.9.8",
     "react": "^18",
     "react-dom": "^18",
-    "recharts": "^3.10.1",
     "tailwind-merge": "^2.2.1",
     "zod": "^4.4.3"
   },

@@ -1,31 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import type { Database, UserRole } from '@/lib/database.types'
-
-const DASHBOARDS_ON = process.env.ENABLE_DASHBOARDS === 'true'
-
-async function getRole(userId: string, getAll: () => { name: string; value: string }[]) {
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll, setAll: () => {} } },
-  )
-  const { data } = await supabase.from('profiles').select('role').eq('id', userId).single()
-  return (data?.role ?? 'jobseeker') as UserRole
-}
+import type { Database } from '@/lib/database.types'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-
-  // Public-website mode: admin/agent surfaces do not exist at all.
-  if (
-    !DASHBOARDS_ON &&
-    (pathname.startsWith('/dashboard/admin') ||
-      pathname.startsWith('/dashboard/agent') ||
-      pathname.startsWith('/api/admin'))
-  ) {
-    return new NextResponse(null, { status: 404 })
-  }
 
   // Session refresh with the current @supabase/ssr cookie pattern.
   let supabaseResponse = NextResponse.next({ request })
@@ -49,13 +27,9 @@ export async function middleware(request: NextRequest) {
   )
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (pathname === '/login') {
-    if (user) {
-      const role = await getRole(user.id, () => request.cookies.getAll())
-      const dest = role === 'admin' ? '/dashboard/admin' : role === 'agent' ? '/dashboard/agent' : '/dashboard'
-      return NextResponse.redirect(new URL(dest, request.url))
-    }
-    return supabaseResponse
+  // Logged-in users never stay on /login (operators browse as jobseekers).
+  if (pathname === '/login' && user) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   const isProtected = pathname.startsWith('/dashboard') || pathname.startsWith('/profile')
@@ -65,19 +39,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  if (user) {
-    const role = await getRole(user.id, () => request.cookies.getAll())
-    if (pathname.startsWith('/dashboard/admin') && role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
-    if (pathname.startsWith('/dashboard/agent') && role !== 'agent') {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
-  }
-
   return supabaseResponse
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/profile', '/login', '/api/admin/:path*'],
+  matcher: ['/dashboard/:path*', '/profile', '/login'],
 }

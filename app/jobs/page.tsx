@@ -51,6 +51,19 @@ export default function JobsPage() {
     load(0, true).finally(() => setLoading(false))
   }, [load])
 
+  // Live sync: silently refetch when the desktop dashboard bumps jobs_version.
+  useEffect(() => {
+    const channel = supabase
+      .channel('jobs-version-feed')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs_version' }, () => {
+        load(0, true)
+      })
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [load])
+
   const loadMore = async () => {
     setLoadingMore(true)
     await load(jobs.length, false)

@@ -43,6 +43,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
   const featured = Boolean(job.is_featured && (!job.featured_until || new Date(job.featured_until).getTime() > Date.now()))
   const safeSourceLink = safeExternalUrl(job.source_link)
+  const safeApplyUrl = safeExternalUrl(job.apply_url)
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
@@ -103,8 +104,18 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             </div>
           ) : (
             <div>
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <Phone size={18} className="text-primary-600" aria-hidden /> Apply / HR contact
+              {safeApplyUrl && (
+                <a
+                  href={safeApplyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center justify-center rounded-lg font-semibold bg-primary-600 text-white hover:bg-primary-700 px-6 py-3 text-base transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  Apply now ↗
+                </a>
+              )}
+              <h2 className="mt-6 text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Phone size={18} className="text-primary-600" aria-hidden /> HR contact
               </h2>
               {contactInfo ? (
                 <p className="mt-2 text-gray-700 whitespace-pre-line">{contactInfo}</p>
@@ -116,7 +127,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                   href={safeSourceLink}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="inline-flex items-center gap-1 mt-4 text-primary-600 hover:text-primary-700 font-medium"
+                  className="inline-flex items-center gap-1 mt-4 text-sm text-gray-500 hover:text-gray-700"
                 >
                   View original posting ↗
                 </a>

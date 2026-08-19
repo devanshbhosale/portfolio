@@ -33,9 +33,9 @@ function fromRow(row: SiteSettingsRow): SiteSettings {
       Quarterly: Number(row.commission_tiers?.Quarterly ?? d.commissionTiers.Quarterly),
       Annual: Number(row.commission_tiers?.Annual ?? d.commissionTiers.Annual),
     },
-    withdrawThreshold: Number(row.withdraw_threshold) || d.withdrawThreshold,
-    jobTtlDays: row.job_ttl_days || d.jobTtlDays,
-    featuredDays: row.featured_days || d.featuredDays,
+    withdrawThreshold: row.withdraw_threshold != null ? Number(row.withdraw_threshold) : d.withdrawThreshold,
+    jobTtlDays: row.job_ttl_days != null ? row.job_ttl_days : d.jobTtlDays,
+    featuredDays: row.featured_days != null ? row.featured_days : d.featuredDays,
   }
 }
 

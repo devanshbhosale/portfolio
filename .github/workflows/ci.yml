@@ -10,7 +10,6 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     env:
-      # Public-website mode: dashboards 404. Placeholders are enough for build.
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
       SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
@@ -18,7 +17,6 @@ jobs:
       RAZORPAY_KEY_SECRET: placeholder-key-secret
       NEXT_PUBLIC_RAZORPAY_KEY_ID: placeholder-key-id
       CRON_SECRET: placeholder-cron-secret
-      ENABLE_DASHBOARDS: "false"
     steps:
       - uses: actions/checkout@v4
 
@@ -39,5 +37,5 @@ jobs:
       - name: Unit tests (money math)
         run: npx vitest run
 
-      - name: Build (public mode)
+      - name: Build
         run: npm run build

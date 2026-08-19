@@ -7,6 +7,11 @@
 insert into public.site_settings (id) values (1)
 on conflict (id) do nothing;
 
+-- The moderation insert trigger forces pending_review unless the bypass GUC
+-- is set. Seed jobs must go live immediately, so set it transaction-locally.
+begin;
+select set_config('jobkar.bypass', 't', true);
+
 insert into public.job_listings
   (title, company, location, salary_range, experience, tags, is_premium,
    is_featured, featured_until, status, approved_at, expires_at, contact_info, description)
@@ -71,8 +76,10 @@ values
    'HR: Arjun S, 92000 14141, trade.hiring@tatasteel.com',
    'ARC and MIG welding at the Jamshedpur works. ITI welder trade with 2+ years. Safety gear and PF provided; contract-to-roll path.');
 
+commit;
+
 -- ═══════════════════════════════════════════════════════════════════
--- Creating YOUR admin account and the AGENT account
+-- Creating YOUR operator accounts (you + friend, for the desktop app)
 -- (profiles.id must reference a real auth.users row, so create the
 --  user FIRST in the dashboard, then flip the role here.)
 --
@@ -80,9 +87,8 @@ values
 --    → email + password (e.g. you@jobkar.in) → Create user.
 --    The handle_new_user trigger auto-creates their profile.
 -- 2. Run:
---      update public.profiles set role = 'admin' where email = 'you@jobkar.in';
---      update public.profiles set role = 'agent' where email = 'agent@jobkar.in';
---    (repeat for your friend — admin too, if he should have full access)
--- 3. Log in with those credentials at /login. The dashboard links
---    appear when ENABLE_DASHBOARDS=true (local mode).
+--      update public.profiles set role = 'operator' where email = 'you@jobkar.in';
+--      update public.profiles set role = 'operator' where email = 'friend@jobkar.in';
+-- 3. Log in with those credentials in the desktop dashboard app (.exe).
+--    The website itself has no admin login — operators browse as jobseekers.
 -- ═══════════════════════════════════════════════════════════════════

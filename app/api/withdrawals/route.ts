@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { adminClient, getAuthedProfile, readJson } from '@/lib/server'
+import { createRouteClient, getAuthedProfile, readJson } from '@/lib/server'
 import { withdrawalSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
 import type { WithdrawalRequestRow } from '@/lib/database.types'
@@ -20,7 +20,9 @@ export async function POST(req: Request) {
 
   // Transactional check+insert in the DB: locks the referrer's commission
   // rows, validates threshold/bank/balance, inserts the request.
-  const { error } = await adminClient().rpc('request_withdrawal', { p_amount: amount })
+  // MUST use the session client — request_withdrawal resolves auth.uid(),
+  // which is NULL under the service-role key.
+  const { error } = await createRouteClient().rpc('request_withdrawal', { p_amount: amount })
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
