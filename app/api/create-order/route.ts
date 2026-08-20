@@ -21,7 +21,12 @@ export async function POST(req: Request) {
   }
   const { plan, referralCode } = parsed.data
 
-  const settings = await getSiteSettings()
+  let settings
+  try {
+    settings = await getSiteSettings()
+  } catch {
+    return NextResponse.json({ error: 'Pricing unavailable right now. Try again.' }, { status: 502 })
+  }
   const amount = settings.prices[plan]
 
   let validReferral = ''

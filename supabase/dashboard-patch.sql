@@ -248,6 +248,8 @@ begin
     select id, withdrawn_amount
     from public.premium_purchases
     where referrer_user_id = w.user_id and withdrawn_amount > 0
+      and commission_status <> 'voided'
+      and refunded_at is null
     order by created_at desc
   loop
     exit when v_left <= 0.001;

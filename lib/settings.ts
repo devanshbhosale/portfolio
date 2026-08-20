@@ -22,10 +22,12 @@ function fromRow(row: SiteSettingsRow): SiteSettings {
   const d = defaults()
   return {
     prices: {
-      Weekly: row.price_weekly || d.prices.Weekly,
-      Monthly: row.price_monthly || d.prices.Monthly,
-      Quarterly: row.price_quarterly || d.prices.Quarterly,
-      Annual: row.price_annual || d.prices.Annual,
+      // `!= null`, not `||`: a deliberate free plan (0 paise) must win,
+      // otherwise create-order and the webhook use stale defaults.
+      Weekly: row.price_weekly != null ? row.price_weekly : d.prices.Weekly,
+      Monthly: row.price_monthly != null ? row.price_monthly : d.prices.Monthly,
+      Quarterly: row.price_quarterly != null ? row.price_quarterly : d.prices.Quarterly,
+      Annual: row.price_annual != null ? row.price_annual : d.prices.Annual,
     },
     commissionTiers: {
       Weekly: Number(row.commission_tiers?.Weekly ?? d.commissionTiers.Weekly),
@@ -39,16 +41,20 @@ function fromRow(row: SiteSettingsRow): SiteSettings {
   }
 }
 
-/** Server-side settings fetch; falls back to code defaults if the row is
- *  missing (e.g. before seed.sql has run). Prices NEVER come from clients. */
+/** Server-side settings fetch. Money-path fail-closed: a transient Supabase
+ *  error must NOT silently fall back to hardcoded code defaults, or the
+ *  webhook would validate (and fulfill) a paid order against the wrong
+ *  prices. Callers (create-order, webhook, settings GET) convert the throw
+ *  into a clean 5xx. */
 export async function getSiteSettings(): Promise<SiteSettings> {
   const { data, error } = await adminClient()
     .from('site_settings')
     .select('*')
     .eq('id', 1)
     .single()
-  if (error || !data) return defaults()
+  if (error) throw new Error(`site_settings unavailable: ${error.message}`)
+  if (!data) return defaults() // row missing only pre-seed, not an error
   return fromRow(data)
 }
 
-export { defaults as defaultSettings }
+export { defaults as defaultSettings, fromRow as settingsFromRow }

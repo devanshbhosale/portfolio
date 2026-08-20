@@ -15,14 +15,26 @@ export async function POST(req: Request) {
   }
   const { razorpay_payment_id, razorpay_order_id } = parsed.data
 
+  // Plain eq() lookups — user-controlled strings are never interpolated into
+  // a PostgREST filter (`.or()` would allow comma-separated disjuncts).
   const { data: purchase } = await adminClient()
     .from('premium_purchases')
     .select('id, user_id')
-    .or(`payment_id.eq.${razorpay_payment_id},order_id.eq.${razorpay_order_id}`)
+    .eq('payment_id', razorpay_payment_id)
     .limit(1)
     .maybeSingle()
+  let row = purchase
+  if (!row) {
+    const { data: byOrder } = await adminClient()
+      .from('premium_purchases')
+      .select('id, user_id')
+      .eq('order_id', razorpay_order_id)
+      .limit(1)
+      .maybeSingle()
+    row = byOrder
+  }
 
-  if (!purchase || purchase.user_id !== user.id) {
+  if (!row || row.user_id !== user.id) {
     return NextResponse.json({ verified: false })
   }
 

@@ -6,6 +6,7 @@ import {
   holdingCommission,
   lifetimeCommission,
   extendedExpiry,
+  HOLDING_PERIOD_MS,
 } from '@/lib/money'
 import type { PremiumPurchaseRow } from '@/lib/database.types'
 
@@ -87,5 +88,47 @@ describe('lib/money — commission & balance math', () => {
     expect(extendedExpiry(past, 7, now)).toEqual(new Date(now + 7 * 24 * 60 * 60 * 1000))
     // null expiry: extend from now
     expect(extendedExpiry(null, 7, now)).toEqual(new Date(now + 7 * 24 * 60 * 60 * 1000))
+  })
+
+  // The exact timestamp suppresses (>= in available, < in holding). Must match
+  // the lazy approval logic in approve_withdrawal(), otherwise a withdrawal
+  // approved on this side can count money the DB has already released.
+  it('holding boundary at exactly 15 min moves commission holding -> available', () => {
+    const atBoundary = makePurchase({
+      commission_status: 'pending',
+      created_at: new Date(now - HOLDING_PERIOD_MS).toISOString(),
+      commission_amount: 40,
+      withdrawn_amount: 0,
+    })
+    const justInside = makePurchase({
+      commission_status: 'pending',
+      created_at: new Date(now - HOLDING_PERIOD_MS + 1).toISOString(),
+      commission_amount: 40,
+      withdrawn_amount: 0,
+    })
+    expect(holdingCommission([atBoundary], now)).toBe(0)
+    expect(availableCommission([atBoundary], now)).toBe(40)
+    expect(holdingCommission([justInside], now)).toBe(40)
+    expect(availableCommission([justInside], now)).toBe(0)
+  })
+
+  it('completely withdrawn rows contribute nothing', () => {
+    const rows: PremiumPurchaseRow[] = [
+      makePurchase({ commission_amount: 50, withdrawn_amount: 50 }),
+      makePurchase({ commission_amount: 50, withdrawn_amount: 49.99 }),
+    ]
+    expect(availableCommission(rows, now)).toBe(0.01)
+  })
+
+  it('recently voided (refunded) pending commission is not spendable', () => {
+    const voided = makePurchase({
+      commission_status: 'voided',
+      created_at: new Date(now - 5 * 60 * 1000).toISOString(),
+      commission_amount: 80,
+    })
+    expect(availableCommission([voided], now)).toBe(0)
+    expect(holdingCommission([voided], now)).toBe(0)
+    // ...but it still counts toward lifetime earnings display
+    expect(lifetimeCommission([voided])).toBe(80)
   })
 })

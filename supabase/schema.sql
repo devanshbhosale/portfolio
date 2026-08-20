@@ -294,7 +294,8 @@ create or replace function public.process_payment(
   p_amount numeric,
   p_payment_id text,
   p_order_id text,
-  p_referral_code text
+  p_referral_code text,
+  p_expected_paise numeric default null
 ) returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   s public.site_settings%rowtype;
@@ -317,7 +318,15 @@ begin
   if v_days is null then
     raise exception 'invalid plan: %', p_plan;
   end if;
-  if abs(p_amount - v_expected) > 0.01 then
+  -- Order-time price pin: the webhook passes the paise amount fixed when the
+  -- Razorpay order was created, so a site_settings price change between order
+  -- and capture cannot strand (or discount) a paid order. Live settings remain
+  -- the fallback for captures without a pin.
+  if p_expected_paise is not null then
+    if abs(p_amount * 100 - p_expected_paise) > 0.99 then
+      raise exception 'amount mismatch vs order: got % expected % paise', p_amount, p_expected_paise;
+    end if;
+  elsif abs(p_amount - v_expected) > 0.01 then
     raise exception 'amount mismatch: got % expected %', p_amount, v_expected;
   end if;
 
@@ -510,6 +519,8 @@ begin
     select id, withdrawn_amount
     from public.premium_purchases
     where referrer_user_id = w.user_id and withdrawn_amount > 0
+      and commission_status <> 'voided'
+      and refunded_at is null
     order by created_at desc
   loop
     exit when v_left <= 0.001;
@@ -592,6 +603,8 @@ $$;
 -- Refund handling. Only a FULL refund voids the commission and revokes
 -- premium; partial refunds leave everything intact. Premium expiry is
 -- recomputed from the remaining non-refunded purchases' grant windows.
+-- refunded_at is set regardless of commission_status: purchases made
+-- WITHOUT a referral code stay 'none' and must lose premium too.
 create or replace function public.void_commission(p_payment_id text, p_refund_amount numeric)
 returns void language plpgsql security definer set search_path = public as $$
 declare
@@ -604,9 +617,16 @@ begin
     return; -- partial refund: no commission void, no premium revoke
   end if;
 
+  -- Clash: already-commission-hold spending is not safe to unspend here.
+  -- Voided/pending/available get status 'voided'; 'none'/'withdrawn' keep
+  -- their status but still get refunded_at so premium is revoked.
   update public.premium_purchases
-  set commission_status = 'voided', refunded_at = now()
-  where payment_id = p_payment_id and commission_status in ('pending', 'available');
+  set commission_status = case
+        when commission_status in ('pending', 'available') then 'voided'
+        else commission_status
+      end,
+      refunded_at = now()
+  where payment_id = p_payment_id;
 
   update public.profiles p
   set premium_expires_at = greatest(
@@ -789,10 +809,11 @@ $$;
 
 -- Money RPCs: service-role ONLY. Revoke from PUBLIC (the default grant) so
 -- anon/authenticated/operator can never call them.
+revoke execute on function public.process_payment(uuid, text, numeric, text, text, text, numeric) from public;
 revoke execute on function public.process_payment(uuid, text, numeric, text, text, text) from public;
 revoke execute on function public.release_commissions() from public;
 revoke execute on function public.void_commission(text, numeric) from public;
-grant  execute on function public.process_payment(uuid, text, numeric, text, text, text) to service_role;
+grant  execute on function public.process_payment(uuid, text, numeric, text, text, text, numeric) to service_role;
 grant  execute on function public.release_commissions() to service_role;
 grant  execute on function public.void_commission(text, numeric) to service_role;
 
