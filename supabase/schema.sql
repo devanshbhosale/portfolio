@@ -177,7 +177,8 @@ create policy "jobs_version public read" on public.jobs_version
 -- Operators need email/name for Purchases + Withdrawals, but must NOT see
 -- bank_* of users who never requested a payout. The WHERE clause gates the
 -- whole view to operators (is_operator() reads auth.uid() from the JWT).
-create or replace view public.operator_profiles as
+create or replace view public.operator_profiles
+  with (security_invoker = true) as
 select id, email, full_name, role, referral_code, premium_plan, premium_expires_at, created_at
 from public.profiles
 where public.is_operator();
@@ -187,7 +188,8 @@ grant select on public.operator_profiles to authenticated;
 -- ─── Public jobs view (column-level gate) ───────────────────────────
 -- Exposes only safe columns of approved, unexpired, non-stale jobs.
 -- contact_info, admin_notes, agent_id, approved_by are NEVER in this view.
-create or replace view public.public_jobs as
+create or replace view public.public_jobs
+  with (security_invoker = true) as
 select id, title, company, location, salary_range, experience, description,
        tags, is_premium, is_featured, featured_until, expires_at,
        source_link, apply_url, created_at, approved_at
@@ -806,35 +808,74 @@ end;
 $$;
 
 -- ─── RPC permissions ────────────────────────────────────────────────
+-- Every SECURITY DEFINER function defaults to EXECUTE for PUBLIC, which
+-- reaches anon AND authenticated. Revoke from public/anon explicitly and
+-- grant back precisely. (see `supabase db advisors` — lint 0028)
 
--- Money RPCs: service-role ONLY. Revoke from PUBLIC (the default grant) so
--- anon/authenticated/operator can never call them.
-revoke execute on function public.process_payment(uuid, text, numeric, text, text, text, numeric) from public;
-revoke execute on function public.process_payment(uuid, text, numeric, text, text, text) from public;
-revoke execute on function public.release_commissions() from public;
-revoke execute on function public.void_commission(text, numeric) from public;
+-- Money RPCs: service-role ONLY.
+revoke execute on function public.process_payment(uuid, text, numeric, text, text, text, numeric) from public, anon, authenticated;
+revoke execute on function public.process_payment(uuid, text, numeric, text, text, text) from public, anon, authenticated;
+revoke execute on function public.release_commissions() from public, anon, authenticated;
+revoke execute on function public.void_commission(text, numeric) from public, anon, authenticated;
 grant  execute on function public.process_payment(uuid, text, numeric, text, text, text, numeric) to service_role;
 grant  execute on function public.release_commissions() to service_role;
 grant  execute on function public.void_commission(text, numeric) to service_role;
 
--- Jobseeker self-service.
+-- Trigger-only + auth-internals + dashboard helpers: no REST surface at all
+-- (their callers are trigger commands / auth-time / postgres-owned code).
+revoke execute on function public.bump_jobs_version() from public, anon, authenticated;
+revoke execute on function public.job_listings_insert_guard() from public, anon, authenticated;
+revoke execute on function public.job_listings_update_guard() from public, anon, authenticated;
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+drop function if exists public.rls_auto_enable();
+
+-- Jobseeker self-service: authenticated only (bodies are auth.uid()-scoped).
+revoke execute on function public.update_own_profile(text, text, text) from public, anon;
 grant execute on function public.update_own_profile(text, text, text) to authenticated;
+revoke execute on function public.request_withdrawal(numeric) from public, anon;
 grant execute on function public.request_withdrawal(numeric) to authenticated;
 
 -- Operator RPCs: executable by authenticated, gated inside by is_operator().
+revoke execute on function public.approve_withdrawal(uuid) from public, anon;
 grant execute on function public.approve_withdrawal(uuid) to authenticated;
+revoke execute on function public.reject_withdrawal(uuid, text) from public, anon;
 grant execute on function public.reject_withdrawal(uuid, text) to authenticated;
+revoke execute on function public.reverse_withdrawal(uuid, text) from public, anon;
 grant execute on function public.reverse_withdrawal(uuid, text) to authenticated;
+revoke execute on function public.submit_job(text, text, text, text, text, text, text[], text, text, text) from public, anon;
 grant execute on function public.submit_job(text, text, text, text, text, text, text[], text, text, text) to authenticated;
+revoke execute on function public.approve_job(uuid, boolean, boolean, text) from public, anon;
 grant execute on function public.approve_job(uuid, boolean, boolean, text) to authenticated;
+revoke execute on function public.reject_job(uuid, text) from public, anon;
 grant execute on function public.reject_job(uuid, text) to authenticated;
+revoke execute on function public.renew_job(uuid) from public, anon;
 grant execute on function public.renew_job(uuid) to authenticated;
+revoke execute on function public.set_job_stale(uuid, boolean) from public, anon;
 grant execute on function public.set_job_stale(uuid, boolean) to authenticated;
+revoke execute on function public.update_site_settings_desktop(int, int, int, int, jsonb, int, int) from public, anon;
 grant execute on function public.update_site_settings_desktop(int, int, int, int, jsonb, int, int) to authenticated;
 
--- ─── Realtime (website live sync) ───────────────────────────────────
+-- is_operator(): INTENTIONAL EXCEPTION — stays public. RLS policies invoke
+-- it as the querying role (including anon) and the desktop renderer checks
+-- operator status from it before any write. Read-only boolean self-check:
+-- `exists(... id = auth.uid() and role = 'operator')` — no escalation vector.
+grant execute on function public.is_operator() to public;
 
-alter publication supabase_realtime add table public.job_listings;
-alter publication supabase_realtime add table public.premium_purchases;
-alter publication supabase_realtime add table public.site_settings;
-alter publication supabase_realtime add table public.jobs_version;
+-- ─── Realtime (website live sync) ───────────────────────────────────
+-- Guarded: re-running a script must not fail on already-published tables.
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='job_listings') then
+    alter publication supabase_realtime add table public.job_listings;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='premium_purchases') then
+    alter publication supabase_realtime add table public.premium_purchases;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='site_settings') then
+    alter publication supabase_realtime add table public.site_settings;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='jobs_version') then
+    alter publication supabase_realtime add table public.jobs_version;
+  end if;
+end $$;

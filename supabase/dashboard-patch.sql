@@ -8,11 +8,12 @@
 -- ═══════════════════════════════════════════════════════════════════
 
 -- 1. Widen profiles.role and demote any legacy admin/agent accounts.
+-- ORDER MATTERS: demote legacy rows BEFORE adding the new check constraint,
+-- otherwise the constraint creation fails on existing 'admin'/'agent' rows.
 alter table public.profiles drop constraint if exists profiles_role_check;
+update public.profiles set role = 'jobseeker' where role in ('admin', 'agent');
 alter table public.profiles add constraint profiles_role_check
   check (role in ('jobseeker', 'operator'));
-
-update public.profiles set role = 'jobseeker' where role in ('admin', 'agent');
 
 -- 2. job_listings: apply_url + stale_at + check.
 alter table public.job_listings add column if not exists apply_url text;
@@ -43,8 +44,19 @@ alter table public.jobs_version enable row level security;
 drop policy if exists "jobs_version public read" on public.jobs_version;
 create policy "jobs_version public read" on public.jobs_version for select using (true);
 
--- 5. is_operator helper (drop dead is_agent/is_admin + their policies).
+-- 5. Drop the legacy policies FIRST — they reference is_agent()/is_admin()
+--    and block dropping those helpers — then the helpers, then is_operator.
+drop policy if exists "profiles admin all" on public.profiles;
+drop policy if exists "jobs agents read own" on public.job_listings;
+drop policy if exists "jobs agents insert own" on public.job_listings;
+drop policy if exists "jobs admin all" on public.job_listings;
+drop policy if exists "purchases admin all" on public.premium_purchases;
+drop policy if exists "withdrawals admin all" on public.withdrawal_requests;
+drop policy if exists "settings admin all" on public.site_settings;
+
 drop function if exists public.is_agent();
+drop function if exists public.is_admin();
+
 create or replace function public.is_operator()
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.profiles where id = auth.uid() and role = 'operator');
@@ -391,8 +403,13 @@ grant execute on function public.renew_job(uuid) to authenticated;
 grant execute on function public.set_job_stale(uuid, boolean) to authenticated;
 grant execute on function public.update_site_settings_desktop(int, int, int, int, jsonb, int, int) to authenticated;
 
--- 14. Realtime publication for jobs_version.
-alter publication supabase_realtime add table public.jobs_version;
+-- 14. Realtime publication for jobs_version (guarded for re-runs).
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='jobs_version') then
+    alter publication supabase_realtime add table public.jobs_version;
+  end if;
+end $$;
 
 -- ═══════════════════════════════════════════════════════════════════
 -- AFTER running this, create the operator accounts:
