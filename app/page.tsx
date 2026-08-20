@@ -85,9 +85,9 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: ShieldCheck, title: 'Verified Listings', desc: 'All jobs are approved by our admins before going live.' },
+              { icon: ShieldCheck, title: 'Verified Listings', desc: 'Every job is reviewed and approved by our team before going live.' },
               { icon: Gift, title: 'Referral Rewards', desc: 'Earn 20%+ of every premium purchase made with your code.' },
-              { icon: Users, title: 'Agent Managed', desc: 'Dedicated agents keep fresh listings coming every day.' },
+              { icon: Users, title: 'Fresh Listings', desc: 'New opportunities added regularly, so there is always something new.' },
             ].map((feature, i) => (
               <motion.div
                 key={feature.title}

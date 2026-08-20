@@ -100,7 +100,7 @@ function LoginForm() {
           <Link href="/signup" className="font-medium text-primary-600 hover:text-primary-700">Create an account</Link>
         </p>
         <p className="mt-6 text-center text-xs text-gray-400">
-          Agent and admin accounts are created by the site owner — jobseeker signup is public.
+          Operator accounts (for managing listings) are created by the site owner — jobseeker signup is public.
         </p>
       </div>
     </div>

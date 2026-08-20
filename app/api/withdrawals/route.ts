@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createRouteClient, getAuthedProfile, readJson } from '@/lib/server'
+// Session client: the operator read policy lets operators read all rows, jobseekers their own.
 import { withdrawalSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
 import type { WithdrawalRequestRow } from '@/lib/database.types'
@@ -34,7 +35,7 @@ export async function GET() {
   const profile = await getAuthedProfile()
   if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data, error } = await adminClient()
+  const { data, error } = await createRouteClient()
     .from('withdrawal_requests')
     .select('*')
     .eq('user_id', profile.id)

@@ -2,9 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import type { ProfileRow } from '@/lib/database.types'
-
-export type UserRole = 'jobseeker' | 'agent' | 'admin'
+import type { ProfileRow, UserRole } from '@/lib/database.types'
 
 export interface AuthUser {
   id: string

@@ -30,8 +30,8 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-semibold mb-3">For Agents</h4>
-            <p className="text-sm">Need to add listings? Agent access is by invite only.</p>
+            <h4 className="text-white font-semibold mb-3">Job Providers</h4>
+            <p className="text-sm">Want to list jobs with us? Reach out to the site owner.</p>
           </div>
         </div>
         <div className="border-t border-gray-800 mt-8 pt-6 text-center text-sm">
