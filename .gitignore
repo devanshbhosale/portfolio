@@ -38,3 +38,7 @@ next-env.d.ts
 
 # local agent artifacts
 .zcode/
+
+# Playwright MCP test artifacts
+.playwright-mcp/
+pricing-checkout.png
