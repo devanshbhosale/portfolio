@@ -42,3 +42,6 @@ next-env.d.ts
 # Playwright MCP test artifacts
 .playwright-mcp/
 pricing-checkout.png
+
+# Supabase CLI cache (created by `npx supabase`)
+supabase/.temp/
