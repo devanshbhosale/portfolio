@@ -9,9 +9,10 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+        env:
+      # Supabase URL + anon key are public by design (same pair deployed on site/exe)
+      NEXT_PUBLIC_SUPABASE_URL: https://qqvsqjpcstkdurrgxznr.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxdnNxanBjc3RrZHVycmd4em5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTQ4MTUsImV4cCI6MjA5MzY3MDgxNX0.eT5nKPk1kV5mqrXVmQSOk9APlafyLTFhwevprA7GIG8
       SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
       RAZORPAY_KEY_ID: placeholder-key-id
       RAZORPAY_KEY_SECRET: placeholder-key-secret
