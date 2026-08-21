@@ -75,6 +75,10 @@ cp .env.example .env.local   # fill in real keys (see below)
 
 1. Create account at [dashboard.razorpay.com](https://dashboard.razorpay.com) → **Settings → API Keys** → generate **Test** keys.
 2. **Webhooks** → Add webhook: `https://<your-vercel-domain>/api/razorpay-webhook` → select **payment.captured**, **refund.processed**, **payment.failed** → save.
+   > ⚠️ The URL must end in exactly `/api/razorpay-webhook`. A webhook pointed at the bare
+   > site (`https://<your-vercel-domain>/`) accepts the delivery but never fulfills it —
+   > checkout shows "Payment Successful" while `/api/verify-payment` keeps returning
+   > `verified:false` and premium never activates. That was the live bug found 2026-08-21.
 
 ### 4. Configure `.env.local`
 

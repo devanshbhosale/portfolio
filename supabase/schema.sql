@@ -147,6 +147,9 @@ create policy "profiles read own" on public.profiles
 
 -- job_listings: public reads go ONLY through the public_jobs view (safe columns).
 -- Operators read all rows (pending/rejected/expired) for the Review Queue/Jobs tabs.
+-- IMPORTANT: do NOT add a public jobseeker/anon policy on this table — RLS
+-- gates ROWS, not COLUMNS, so any such policy would expose contact_info
+-- (premium content) through direct selects. The view below is the gate.
 create policy "jobs operator read" on public.job_listings
   for select using (public.is_operator());
 -- No insert/update policies: all job writes go through gated RPCs.
@@ -188,8 +191,14 @@ grant select on public.operator_profiles to authenticated;
 -- ─── Public jobs view (column-level gate) ───────────────────────────
 -- Exposes only safe columns of approved, unexpired, non-stale jobs.
 -- contact_info, admin_notes, agent_id, approved_by are NEVER in this view.
-create or replace view public.public_jobs
-  with (security_invoker = true) as
+-- Runs as OWNER (not security_invoker): the view's WHERE + column list ARE
+-- the authorization — its content is caller-independent by design, and
+-- forcing RLS-as-caller here made anonymous visitors see 0 rows
+-- (2026-08-21 live bug). The owner is postgres/supabase_admin whose only
+-- table path is this view, so no RLS bypass of the premium contact_info
+-- gate is created; operator_profiles keeps security_invoker because ITS
+-- rows do depend on the caller.
+create or replace view public.public_jobs as
 select id, title, company, location, salary_range, experience, description,
        tags, is_premium, is_featured, featured_until, expires_at,
        source_link, apply_url, created_at, approved_at
@@ -814,7 +823,16 @@ $$;
 
 -- Money RPCs: service-role ONLY.
 revoke execute on function public.process_payment(uuid, text, numeric, text, text, text, numeric) from public, anon, authenticated;
-revoke execute on function public.process_payment(uuid, text, numeric, text, text, text) from public, anon, authenticated;
+-- The legacy 6-arg process_payment only exists on databases migrated in
+-- place; on a fresh install a plain REVOKE on the missing signature would
+-- error and abort the script before the service_role grants below run.
+do $$
+begin
+  revoke execute on function public.process_payment(uuid, text, numeric, text, text, text) from public, anon, authenticated;
+exception
+  when undefined_function then null;
+end
+$$;
 revoke execute on function public.release_commissions() from public, anon, authenticated;
 revoke execute on function public.void_commission(text, numeric) from public, anon, authenticated;
 grant  execute on function public.process_payment(uuid, text, numeric, text, text, text, numeric) to service_role;

@@ -10,21 +10,24 @@ const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   // Tighten referrer leakage.
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  // Baseline CSP. Razorpay checkout loads its script + iframe from its own
-  // origins, so those are allowlisted below.
+  // Baseline CSP. Razorpay checkout needs more than just checkout.razorpay.com:
+  // its risk-detection bundle lives on cdn.razorpay.com, v2 checkout assets on
+  // checkout-static-next.razorpay.com, internal calls use unsafe-eval, and it
+  // frames an anti-fraud origin (wra-api.net). Verified against the browser
+  // console during a live test payment — anything less logs CSP violations.
   {
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://api.razorpay.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.razorpay.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self'",
       "connect-src 'self' ws: wss: https:",
-      "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com",
+      "frame-src 'self' https://*.razorpay.com https://*.wra-api.net",
       "object-src 'none'",
       "base-uri 'self'",
-      "form-action 'self'",
+      "form-action 'self' https://*.razorpay.com",
     ].join('; '),
   },
 ]
