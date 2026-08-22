@@ -85,6 +85,12 @@ export default function JobsPage() {
     window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname)
   }, [filters])
 
+  // Initial feed load.
+  useEffect(() => {
+    setLoading(true)
+    load(0, true).finally(() => setLoading(false))
+  }, [load])
+
   // Live sync: silently refetch when the desktop dashboard bumps jobs_version.
   useEffect(() => {
     const channel = supabase
