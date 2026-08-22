@@ -24,14 +24,21 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-3">Support</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="#" className="hover:text-white">Contact Us</Link></li>
-              <li><Link href="#" className="hover:text-white">FAQ</Link></li>
-              <li><Link href="#" className="hover:text-white">Terms & Privacy</Link></li>
+              <li><Link href="/contact" className="hover:text-white">Contact Us</Link></li>
+              <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
+              <li><Link href="/terms" className="hover:text-white">Terms</Link></li>
+              <li><Link href="/privacy" className="hover:text-white">Privacy</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-3">Job Providers</h4>
-            <p className="text-sm">Want to list jobs with us? Reach out to the site owner.</p>
+            <p className="text-sm">
+              Want to list jobs with us?{' '}
+              <Link href="/contact" className="text-primary-500 font-medium hover:text-white">
+                Reach out to us
+              </Link>
+              .
+            </p>
           </div>
         </div>
         <div className="border-t border-gray-800 mt-8 pt-6 text-center text-sm">
