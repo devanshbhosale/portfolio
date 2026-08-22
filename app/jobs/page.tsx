@@ -39,8 +39,13 @@ export default function JobsPage() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [tags, setTags] = useState<string[]>([])
   const urlSynced = useRef(false)
+  // Tier changes re-invoke load; a slower earlier response (e.g. the
+  // unfiltered first render before the URL tier is applied) must never
+  // overwrite a newer one — only the latest invocation writes state.
+  const reqSeq = useRef(0)
 
   const load = useCallback(async (from: number, replace: boolean) => {
+    const seq = ++reqSeq.current
     let query = supabase
       .from('public_jobs')
       .select('*')
@@ -54,6 +59,7 @@ export default function JobsPage() {
     else if (filters.tier === 'free') query = query.eq('is_premium', false)
     if (replace && from === 0) query = query.limit(PAGE_SIZE)
     const { data, error: err } = await query
+    if (seq !== reqSeq.current) return false // superseded by a newer load
     if (err) {
       setError('Could not load jobs. Please retry.')
       return false
