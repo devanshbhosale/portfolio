@@ -10,7 +10,7 @@ import Button from '@/components/ui/Button'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import {
-  DEFAULT_FILTERS, filterJobs, filtersActive, filtersFromParams, filtersToParams,
+  DEFAULT_FILTERS, filterJobs, filtersFromParams, filtersToParams,
   type JobFilters, type Tier,
 } from '@/lib/jobsFilters'
 import { savedSet, toggleSaved } from '@/lib/savedJobs'
@@ -47,6 +47,11 @@ export default function JobsPage() {
       .order('is_featured', { ascending: false })
       .order('approved_at', { ascending: false })
       .range(from, from + PAGE_SIZE - 1)
+    // Free/Premium tier filtering is server-side: with hundreds of jobs the
+    // first page may not contain any premium rows, and client-side filtering
+    // would then wrongly report "0 jobs match".
+    if (filters.tier === 'premium') query = query.eq('is_premium', true)
+    else if (filters.tier === 'free') query = query.eq('is_premium', false)
     if (replace && from === 0) query = query.limit(PAGE_SIZE)
     const { data, error: err } = await query
     if (err) {
@@ -58,7 +63,7 @@ export default function JobsPage() {
     setHasMore(rows.length === PAGE_SIZE)
     setError(null)
     return true
-  }, [])
+  }, [filters.tier])
 
   // Initial state: filters from the URL (shareable /jobs?location=Mumbai&tier=premium),
   // saved-job ids from this browser, live tag list from the DB.
@@ -115,6 +120,11 @@ export default function JobsPage() {
   }
 
   const filteredJobs = filterJobs(jobs, filters, savedIds)
+
+  // Free/Premium tiers are filtered server-side (load refetches), so Load
+  // more stays available for them; only the client-only filters disable it.
+  const clientFiltersActive =
+    Boolean(filters.search || filters.location || filters.tag) || filters.tier === 'saved'
 
   const freeJobs = filteredJobs.filter((j) => !j.is_premium)
   const premiumJobs = filteredJobs.filter((j) => j.is_premium)
@@ -217,7 +227,7 @@ export default function JobsPage() {
                     key={job.id}
                     job={job}
                     index={idx}
-                    action={<SaveHeart jobId={job.id} />}
+                    action={<SaveHeart jobId={job.id} onToggle={onHeartToggle} />}
                   />
                 ))}
               </div>
@@ -238,7 +248,7 @@ export default function JobsPage() {
                       job={job}
                       index={idx}
                       isPremium
-                      action={<SaveHeart jobId={job.id} />}
+                      action={<SaveHeart jobId={job.id} onToggle={onHeartToggle} />}
                     />
                   ) : (
                     <BlurredJobCard key={job.id} job={job} index={idx} onLockClick={() => setPaywallOpen(true)} />
@@ -256,7 +266,7 @@ export default function JobsPage() {
             </div>
           )}
 
-          {hasMore && !filtersActive(filters) && (
+          {hasMore && !clientFiltersActive && (
             <div className="text-center mt-10">
               <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
                 {loadingMore ? 'Loading…' : 'Load more jobs'}
