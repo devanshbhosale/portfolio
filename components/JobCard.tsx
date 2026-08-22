@@ -2,15 +2,18 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { MapPin, Briefcase, Clock, Tag, Star, Crown } from 'lucide-react'
+import type { ReactNode } from 'react'
 import type { PublicJob } from '@/lib/database.types'
 
 interface JobCardProps {
   job: PublicJob
   index?: number
   isPremium?: boolean
+  /** Optional overlay action (Save heart) rendered above the card's link. */
+  action?: ReactNode
 }
 
-export default function JobCard({ job, index = 0, isPremium = false }: JobCardProps) {
+export default function JobCard({ job, index = 0, isPremium = false, action }: JobCardProps) {
   const featured = Boolean(job.is_featured && (!job.featured_until || new Date(job.featured_until).getTime() > Date.now()))
 
   return (
@@ -19,8 +22,9 @@ export default function JobCard({ job, index = 0, isPremium = false }: JobCardPr
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index, 8) * 0.05, type: 'spring', stiffness: 120 }}
       whileHover={{ y: -4 }}
-      className="h-full"
+      className="relative h-full"
     >
+      {action && <div className="absolute top-3 right-3 z-10">{action}</div>}
       <Link
         href={`/jobs/${job.id}`}
         className="block h-full bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:border-primary-200 hover:shadow-card-hover transition-all"

@@ -4,7 +4,7 @@ import { adminClient } from '@/lib/server'
 export const dynamic = 'force-dynamic'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jobkar.vercel.app'
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jobkarbe.vercel.app'
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: base, changeFrequency: 'daily', priority: 1 },
@@ -12,19 +12,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/pricing`, changeFrequency: 'weekly', priority: 0.7 },
   ]
 
-  const { data: jobs } = await adminClient()
-    .from('public_jobs')
-    .select('id, approved_at')
-    .order('approved_at', { ascending: false })
-    .limit(1000)
+  try {
+    const { data: jobs } = await adminClient()
+      .from('public_jobs')
+      .select('id, approved_at')
+      .order('approved_at', { ascending: false })
+      .limit(5000)
 
-  return [
-    ...staticRoutes,
-    ...(jobs ?? []).map((job) => ({
-      url: `${base}/jobs/${job.id}`,
-      lastModified: job.approved_at ?? undefined,
-      changeFrequency: 'daily' as const,
-      priority: 0.6,
-    })),
-  ]
+    return [
+      ...staticRoutes,
+      ...(jobs ?? []).map((job) => ({
+        url: `${base}/jobs/${job.id}`,
+        lastModified: job.approved_at ?? undefined,
+        changeFrequency: 'daily' as const,
+        priority: 0.8,
+      })),
+    ]
+  } catch {
+    // DB hiccup at request time — still serve the static entries.
+    return staticRoutes
+  }
 }

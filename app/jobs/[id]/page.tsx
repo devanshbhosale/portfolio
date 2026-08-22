@@ -3,9 +3,14 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { MapPin, Briefcase, Clock, Tag, ArrowLeft, Lock, Star, Phone } from 'lucide-react'
 import Button from '@/components/ui/Button'
+import SaveHeart from '@/components/SaveHeart'
+import ApplyButton from '@/components/ApplyButton'
 import { adminClient, getAuthedProfile, isPremiumActive } from '@/lib/server'
 import { safeExternalUrl } from '@/lib/safe-url'
+import { buildJobPostingLd } from '@/lib/jobPosting'
 import type { PublicJob } from '@/lib/database.types'
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jobkarbe.vercel.app'
 
 async function getJob(id: string) {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null
@@ -28,15 +33,13 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   const job = await getJob(params.id)
   if (!job) notFound()
 
-  const locked = Boolean(job.is_premium)
+  // The lock must factor in the VIEWER: a premium subscriber never sees a
+  // paywall, even on premium listings without contact_info (2026-08-22 bug —
+  // locked was just job.is_premium, hiding the Apply button from payers).
+  const locked = Boolean(job.is_premium) && !isPremiumActive(await getAuthedProfile())
+
   let contactInfo: string | null = null
-  if (locked) {
-    const profile = await getAuthedProfile()
-    if (isPremiumActive(profile)) {
-      const { data } = await adminClient().from('job_listings').select('contact_info').eq('id', job.id).single()
-      contactInfo = data?.contact_info ?? null
-    }
-  } else {
+  if (!locked) {
     const { data } = await adminClient().from('job_listings').select('contact_info').eq('id', job.id).single()
     contactInfo = data?.contact_info ?? null
   }
@@ -44,9 +47,15 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   const featured = Boolean(job.is_featured && (!job.featured_until || new Date(job.featured_until).getTime() > Date.now()))
   const safeSourceLink = safeExternalUrl(job.source_link)
   const safeApplyUrl = safeExternalUrl(job.apply_url)
+  const jobLd = buildJobPostingLd(job, `${SITE_URL}/jobs/${job.id}`)
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
+      <script
+        type="application/ld+json"
+        // jobLd is built server-side from DB fields only — no user input.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobLd) }}
+      />
       <Link href="/jobs" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
         <ArrowLeft size={16} aria-hidden /> All jobs
       </Link>
@@ -57,17 +66,20 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{job.title}</h1>
             <p className="mt-1 text-lg text-gray-600">{job.company}</p>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            {featured && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                <Star size={12} aria-hidden /> Featured
-              </span>
-            )}
-            {job.is_premium && (
-              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${locked ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
-                {locked ? <><Lock size={12} aria-hidden /> Premium</> : 'Premium · Unlocked'}
-              </span>
-            )}
+          <div className="flex items-start gap-2">
+            <div className="flex flex-col items-end gap-2">
+              {featured && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                  <Star size={12} aria-hidden /> Featured
+                </span>
+              )}
+              {job.is_premium && (
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${locked ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
+                  {locked ? <><Lock size={12} aria-hidden /> Premium</> : 'Premium · Unlocked'}
+                </span>
+              )}
+            </div>
+            <SaveHeart jobId={job.id} />
           </div>
         </div>
 
@@ -95,7 +107,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
         )}
 
         <section className="mt-6 pt-6 border-t border-gray-100">
-          {locked && !contactInfo ? (
+          {locked ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-center">
               <Lock className="mx-auto text-amber-600 mb-2" size={24} aria-hidden />
               <h2 className="font-semibold text-gray-900">This is a premium listing</h2>
@@ -104,16 +116,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             </div>
           ) : (
             <div>
-              {safeApplyUrl && (
-                <a
-                  href={safeApplyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="inline-flex items-center justify-center rounded-lg font-semibold bg-primary-600 text-white hover:bg-primary-700 px-6 py-3 text-base transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                >
-                  Apply now ↗
-                </a>
-              )}
+              {safeApplyUrl && <ApplyButton jobId={job.id} href={safeApplyUrl} />}
               <h2 className="mt-6 text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <Phone size={18} className="text-primary-600" aria-hidden /> HR contact
               </h2>

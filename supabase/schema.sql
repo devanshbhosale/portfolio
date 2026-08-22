@@ -108,8 +108,12 @@ create table public.site_settings (
   withdraw_threshold numeric not null default 500,  -- rupees; owner-only (SQL editor)
   job_ttl_days int not null default 30,
   featured_days int not null default 7,
+  premium_ratio numeric not null default 0.35,  -- P(job marked premium at submit); owner-only (SQL editor)
   updated_at timestamptz default now()
 );
+
+-- Idempotent for existing databases (column added 2026-08-22).
+alter table public.site_settings add column if not exists premium_ratio numeric not null default 0.35;
 
 -- Live-sync sentinel: bumped by a trigger whenever job_listings changes, so
 -- the public /jobs page can silently refetch on realtime.
@@ -208,6 +212,22 @@ where status = 'approved'
   and stale_at is null;
 
 grant select on public.public_jobs to anon, authenticated;
+
+-- ─── Public tags view (dynamic website filters) ─────────────────────
+-- Distinct tags across the same approved/unexpired/non-stale rows as
+-- public_jobs, owner-run for the same reason (caller-independent content;
+-- WHERE + column list are the gate). The website builds its category
+-- dropdown from this, so a dashboard-approved job with new tags ("qa",
+-- "security", …) becomes a filter option immediately.
+create or replace view public.public_tags as
+select distinct unnest(tags) as tag
+from public.job_listings
+where status = 'approved'
+  and (expires_at is null or expires_at > now())
+  and stale_at is null
+  and tags is not null;
+
+grant select on public.public_tags to anon, authenticated;
 
 -- ─── Signup trigger ─────────────────────────────────────────────────
 
@@ -671,11 +691,18 @@ create or replace function public.submit_job(
 declare
   v_id uuid;
   v_expires timestamptz;
+  v_premium boolean;
 begin
   if not public.is_operator() then raise exception 'forbidden'; end if;
 
-  select now() + make_interval(days => s.job_ttl_days) into v_expires
-  from public.site_settings s where id = 1;
+  -- Premium is assigned by weighted coin at submit time (site_settings.
+  -- premium_ratio, default 0.35): the Review Queue shows the pre-marked
+  -- flag, the operator glances + approves — no per-row toggling. approve_job
+  -- can still flip it before the job goes live.
+  select now() + make_interval(days => s.job_ttl_days),
+         random() < s.premium_ratio
+    into v_expires, v_premium
+    from public.site_settings s where id = 1;
 
   insert into public.job_listings (
     agent_id, source_link, apply_url, title, company, location, salary_range,
@@ -687,7 +714,7 @@ begin
     p_title, p_company, nullif(p_location, ''), nullif(p_salary_range, ''),
     nullif(p_experience, ''), nullif(p_description, ''), nullif(p_contact_info, ''),
     coalesce(p_tags, '{}'),
-    false, false, null, v_expires,
+    v_premium, false, null, v_expires,
     'pending_review', null, null
   )
   returning id into v_id;
@@ -795,6 +822,25 @@ begin
 end;
 $$;
 
+-- Permanently delete a job (operator). Hard delete is safe: nothing
+-- references job_listings, and the realtime trigger bumps jobs_version so
+-- the website live-syncs. Rejected/pending cleanup is the main use —
+-- stale-hiding is the softer set_job_stale path.
+create or replace function public.delete_job(p_id uuid)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_operator() then raise exception 'forbidden'; end if;
+
+  delete from public.job_listings where id = p_id;
+
+  if not found then
+    return jsonb_build_object('status', 'not_found');
+  end if;
+
+  return jsonb_build_object('status', 'deleted');
+end;
+$$;
+
 -- Desktop settings edit (operator). Deliberately OMITS withdraw_threshold —
 -- that stays owner-only via the SQL editor.
 create or replace function public.update_site_settings_desktop(
@@ -871,6 +917,8 @@ revoke execute on function public.renew_job(uuid) from public, anon;
 grant execute on function public.renew_job(uuid) to authenticated;
 revoke execute on function public.set_job_stale(uuid, boolean) from public, anon;
 grant execute on function public.set_job_stale(uuid, boolean) to authenticated;
+revoke execute on function public.delete_job(uuid) from public, anon;
+grant execute on function public.delete_job(uuid) to authenticated;
 revoke execute on function public.update_site_settings_desktop(int, int, int, int, jsonb, int, int) from public, anon;
 grant execute on function public.update_site_settings_desktop(int, int, int, int, jsonb, int, int) to authenticated;
 

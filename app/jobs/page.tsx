@@ -1,16 +1,29 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react'
-import { Search, MapPin, Briefcase, AlertCircle } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Search, MapPin, Briefcase, AlertCircle, Heart } from 'lucide-react'
 import JobCard from '@/components/JobCard'
 import BlurredJobCard from '@/components/BlurredJobCard'
 import PaywallModal from '@/components/PaywallModal'
+import SaveHeart from '@/components/SaveHeart'
 import SkeletonLoader from '@/components/SkeletonLoader'
 import Button from '@/components/ui/Button'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import {
+  DEFAULT_FILTERS, filterJobs, filtersActive, filtersFromParams, filtersToParams,
+  type JobFilters, type Tier,
+} from '@/lib/jobsFilters'
+import { savedSet, toggleSaved } from '@/lib/savedJobs'
 import type { PublicJob } from '@/lib/database.types'
 
 const PAGE_SIZE = 9
+
+const TIER_OPTIONS: { value: Tier; label: string; icon?: 'heart' }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'free', label: 'Free' },
+  { value: 'premium', label: 'Premium' },
+  { value: 'saved', label: 'Saved', icon: 'heart' },
+]
 
 export default function JobsPage() {
   const { user } = useAuth()
@@ -22,9 +35,10 @@ export default function JobsPage() {
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [paywallOpen, setPaywallOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const [location, setLocation] = useState('')
-  const [category, setCategory] = useState('')
+  const [filters, setFilters] = useState<JobFilters>(DEFAULT_FILTERS)
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
+  const [tags, setTags] = useState<string[]>([])
+  const urlSynced = useRef(false)
 
   const load = useCallback(async (from: number, replace: boolean) => {
     let query = supabase
@@ -46,10 +60,30 @@ export default function JobsPage() {
     return true
   }, [])
 
+  // Initial state: filters from the URL (shareable /jobs?location=Mumbai&tier=premium),
+  // saved-job ids from this browser, live tag list from the DB.
   useEffect(() => {
-    setLoading(true)
-    load(0, true).finally(() => setLoading(false))
-  }, [load])
+    setFilters(filtersFromParams(window.location.search))
+    setSavedIds(savedSet(window.localStorage))
+    supabase
+      .from('public_tags')
+      .select('tag')
+      .order('tag')
+      .then(({ data }) => {
+        setTags(((data ?? []) as { tag: string }[]).map((r) => r.tag).filter(Boolean))
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Keep the URL in sync (replaceState — no history spam) as filters change.
+  useEffect(() => {
+    if (!urlSynced.current) {
+      urlSynced.current = true
+      return
+    }
+    const qs = filtersToParams(filters).toString()
+    window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname)
+  }, [filters])
 
   // Live sync: silently refetch when the desktop dashboard bumps jobs_version.
   useEffect(() => {
@@ -70,17 +104,16 @@ export default function JobsPage() {
     setLoadingMore(false)
   }
 
-  const filteredJobs = jobs.filter((job) => {
-    const q = search.toLowerCase()
-    const matchesSearch =
-      !q || job.title.toLowerCase().includes(q) || job.company.toLowerCase().includes(q)
-    const matchesLocation = !location || (job.location ?? '').toLowerCase().includes(location.toLowerCase())
-    const matchesCategory = !category || (job.tags ?? []).some((tag) => tag.toLowerCase().includes(category.toLowerCase()))
-    return matchesSearch && matchesLocation && matchesCategory
-  })
+  const onHeartToggle = (jobId: string) => {
+    setSavedIds(toggleSaved(window.localStorage, jobId))
+  }
+
+  const filteredJobs = filterJobs(jobs, filters, savedIds)
 
   const freeJobs = filteredJobs.filter((j) => !j.is_premium)
   const premiumJobs = filteredJobs.filter((j) => j.is_premium)
+
+  const setTier = (tier: Tier) => setFilters((f) => ({ ...f, tier }))
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -95,8 +128,8 @@ export default function JobsPage() {
             id="job-search"
             type="search"
             placeholder="Search by title or company"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={filters.search}
+            onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
@@ -107,8 +140,8 @@ export default function JobsPage() {
             id="job-location"
             type="search"
             placeholder="Location"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
+            value={filters.location}
+            onChange={(e) => setFilters((f) => ({ ...f, location: e.target.value }))}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -117,17 +150,42 @@ export default function JobsPage() {
           <label htmlFor="job-category" className="sr-only">Category</label>
           <select
             id="job-category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            value={filters.tag}
+            onChange={(e) => setFilters((f) => ({ ...f, tag: e.target.value }))}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none bg-white"
           >
             <option value="">All Categories</option>
-            <option value="Full-time">Full-time</option>
-            <option value="Part-time">Part-time</option>
-            <option value="Skilled">Skilled</option>
-            <option value="Remote">Remote</option>
+            {tags.map((tag) => (
+              <option key={tag} value={tag}>{tag}</option>
+            ))}
           </select>
         </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
+        <div className="inline-flex rounded-lg border border-gray-300 bg-white p-0.5" role="group" aria-label="Filter by tier">
+          {TIER_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setTier(opt.value)}
+              aria-pressed={filters.tier === opt.value}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                filters.tier === opt.value
+                  ? 'bg-primary-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {opt.icon === 'heart' && <Heart size={13} aria-hidden />}
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {!loading && !error && (
+          <p className="text-sm text-gray-500" role="status">
+            {filteredJobs.length} job{filteredJobs.length === 1 ? '' : 's'} match
+          </p>
+        )}
       </div>
 
       {error ? (
@@ -149,7 +207,12 @@ export default function JobsPage() {
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Free Listings</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {freeJobs.map((job, idx) => (
-                  <JobCard key={job.id} job={job} index={idx} />
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    index={idx}
+                    action={<SaveHeart jobId={job.id} />}
+                  />
                 ))}
               </div>
             </div>
@@ -164,7 +227,13 @@ export default function JobsPage() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {premiumJobs.map((job, idx) => (
                   isPremium ? (
-                    <JobCard key={job.id} job={job} index={idx} isPremium />
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      index={idx}
+                      isPremium
+                      action={<SaveHeart jobId={job.id} />}
+                    />
                   ) : (
                     <BlurredJobCard key={job.id} job={job} index={idx} onLockClick={() => setPaywallOpen(true)} />
                   )
@@ -174,10 +243,14 @@ export default function JobsPage() {
           )}
 
           {!loading && filteredJobs.length === 0 && (
-            <div className="text-center py-16 text-gray-500">No jobs found. Try adjusting filters.</div>
+            <div className="text-center py-16 text-gray-500">
+              {filters.tier === 'saved'
+                ? 'No saved jobs yet — tap the ♥ on any listing to keep it here.'
+                : 'No jobs found. Try adjusting filters.'}
+            </div>
           )}
 
-          {hasMore && !search && !location && !category && (
+          {hasMore && !filtersActive(filters) && (
             <div className="text-center mt-10">
               <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
                 {loadingMore ? 'Loading…' : 'Load more jobs'}

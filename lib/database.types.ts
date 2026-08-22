@@ -93,6 +93,8 @@ export type SiteSettingsRow = {
   withdraw_threshold: number
   job_ttl_days: number
   featured_days: number
+  /** P(job marked premium at submit) — owner-only, SQL editor. */
+  premium_ratio: number
   updated_at: string
 }
 
@@ -229,9 +231,11 @@ export type Database = {
     Views: {
       public_jobs: { Row: PublicJob; Relationships: [] }
       operator_profiles: { Row: OperatorProfile; Relationships: [] }
+      public_tags: { Row: { tag: string | null }; Relationships: [] }
     }
     Functions: {
       is_operator: { Args: Record<string, never>; Returns: boolean }
+      delete_job: { Args: { p_id: string }; Returns: Json }
       process_payment: {
         Args: {
           p_user_id: string
