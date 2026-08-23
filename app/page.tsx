@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, ShieldCheck, Users, Gift } from 'lucide-react'
 import Button from '@/components/ui/Button'
+import HeroParticles from '@/components/HeroParticles'
+import DecodeHeading from '@/components/DecodeHeading'
 import JobCard from '@/components/JobCard'
 import BlurredJobCard from '@/components/BlurredJobCard'
 import SkeletonLoader from '@/components/SkeletonLoader'
@@ -49,6 +51,7 @@ export default function LandingPage() {
     <div className="bg-white">
       <section className="relative overflow-hidden py-20 md:py-28">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-accent-50 opacity-70" />
+        <HeroParticles />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
@@ -56,8 +59,14 @@ export default function LandingPage() {
             transition={{ duration: 0.6, type: 'spring', stiffness: 120 }}
             className="text-4xl md:text-6xl font-extrabold tracking-tighter text-gray-900"
           >
-            Find Your Next Job, <br className="hidden md:block" />
-            <span className="text-primary-600">Earn Rewards</span> by Referring
+            <DecodeHeading segments={[{ text: 'Find Your Next Job, ' }]} />
+            <br className="hidden md:block" />
+            <DecodeHeading
+              segments={[
+                { text: 'Earn Rewards', className: 'text-primary-600' },
+                { text: ' by Referring' },
+              ]}
+            />
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 30 }}
@@ -73,10 +82,10 @@ export default function LandingPage() {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="mt-10 flex flex-wrap justify-center gap-4"
           >
-            <Button href="/jobs" size="lg" variant="primary">
+            <Button href="/jobs" size="lg" variant="primary" className="cta-sweep">
               Browse Jobs <ArrowRight size={18} className="ml-2" aria-hidden />
             </Button>
-            <Button href="/pricing" size="lg" variant="outline">See Premium Plans</Button>
+            <Button href="/pricing" size="lg" variant="outline" className="cta-sweep">See Premium Plans</Button>
           </motion.div>
         </div>
       </section>

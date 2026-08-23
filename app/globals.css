@@ -17,6 +17,31 @@
   pointer-events: none;
 }
 
+/* Gradient-sweep CTA — ported from MengTo/threeui "gradient-cta" /
+   "gradient-pill-button" family (MIT, github.com/MengTo/threeui).
+   A light beam sweeps across once on hover; pure CSS, zero JS. */
+.cta-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.cta-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+}
+.cta-sweep:hover::after,
+.cta-sweep:focus-visible::after {
+  transform: translateX(120%);
+  transition: transform 0.7s ease;
+}
+
 .skeleton {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
