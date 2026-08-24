@@ -1,13 +1,14 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { MapPin, Briefcase, Clock, Tag, ArrowLeft, Lock, Star, Phone } from 'lucide-react'
+import { MapPin, Briefcase, IndianRupee, Tag, ArrowLeft, Lock, Star, Phone } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import SaveHeart from '@/components/SaveHeart'
 import ApplyButton from '@/components/ApplyButton'
 import { adminClient, getAuthedProfile, isPremiumActive } from '@/lib/server'
 import { safeExternalUrl } from '@/lib/safe-url'
 import { buildJobPostingLd } from '@/lib/jobPosting'
+import { redactJob, isTeaser } from '@/lib/jobRedaction'
 import type { PublicJob } from '@/lib/database.types'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jobkarbe.vercel.app'
@@ -23,6 +24,15 @@ async function getJob(id: string) {
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const job = await getJob(params.id)
   if (!job) return { title: 'Job not found — Jobkar' }
+  // Locked premium rows are redacted everywhere — meta tags included. The
+  // full title/company/description must never leak into view-source.
+  const view = redactJob(job, isPremiumActive(await getAuthedProfile()))
+  if (isTeaser(view)) {
+    return {
+      title: `${view.title_prefix}… — Premium Job | Jobkar`,
+      description: 'This premium listing is available to Jobkar Premium members.',
+    }
+  }
   return {
     title: `${job.title} at ${job.company} — Jobkar`,
     description: (job.description ?? `${job.title} role in ${job.location ?? 'India'}`).slice(0, 160),
@@ -38,6 +48,11 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   // locked was just job.is_premium, hiding the Apply button from payers).
   const locked = Boolean(job.is_premium) && !isPremiumActive(await getAuthedProfile())
 
+  // Redacted identity for locked rows — the same discipline as the meta
+  // tags: full title/company/description never reach an unentitled browser.
+  const lockedView = redactJob(job, false)
+  const teaser = isTeaser(lockedView) ? lockedView : null
+
   let contactInfo: string | null = null
   if (!locked) {
     const { data } = await adminClient().from('job_listings').select('contact_info').eq('id', job.id).single()
@@ -47,15 +62,17 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   const featured = Boolean(job.is_featured && (!job.featured_until || new Date(job.featured_until).getTime() > Date.now()))
   const safeSourceLink = safeExternalUrl(job.source_link)
   const safeApplyUrl = safeExternalUrl(job.apply_url)
-  const jobLd = buildJobPostingLd(job, `${SITE_URL}/jobs/${job.id}`)
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-      <script
-        type="application/ld+json"
-        // jobLd is built server-side from DB fields only — no user input.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobLd) }}
-      />
+      {!locked && (
+        <script
+          type="application/ld+json"
+          // Built server-side from DB fields only — no user input. Omitted
+          // entirely when locked: it embeds title/company/description.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJobPostingLd(job, `${SITE_URL}/jobs/${job.id}`)) }}
+        />
+      )}
       <Link href="/jobs" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
         <ArrowLeft size={16} aria-hidden /> All jobs
       </Link>
@@ -63,8 +80,8 @@ export default async function JobDetailPage({ params }: { params: { id: string }
       <article className="mt-4 bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{job.title}</h1>
-            <p className="mt-1 text-lg text-gray-600">{job.company}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{teaser ? `${teaser.title_prefix}…` : job.title}</h1>
+            <p className="mt-1 text-lg text-gray-600">{teaser ? 'Top Employer' : job.company}</p>
           </div>
           <div className="flex items-start gap-2">
             <div className="flex flex-col items-end gap-2">
@@ -86,7 +103,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-500">
           {job.location && <span className="inline-flex items-center gap-1"><MapPin size={15} aria-hidden /> {job.location}</span>}
           {job.experience && <span className="inline-flex items-center gap-1"><Briefcase size={15} aria-hidden /> {job.experience}</span>}
-          {job.salary_range && <span className="inline-flex items-center gap-1"><Clock size={15} aria-hidden /> {job.salary_range}</span>}
+          {job.salary_range && <span className="inline-flex items-center gap-1"><IndianRupee size={15} aria-hidden /> {job.salary_range}</span>}
         </div>
 
         {(job.tags ?? []).length > 0 && (
@@ -99,7 +116,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           </div>
         )}
 
-        {job.description && (
+        {job.description && !teaser && (
           <section className="mt-6 pt-6 border-t border-gray-100">
             <h2 className="text-lg font-semibold text-gray-800">Job description</h2>
             <p className="mt-2 whitespace-pre-line text-gray-700 leading-relaxed">{job.description}</p>

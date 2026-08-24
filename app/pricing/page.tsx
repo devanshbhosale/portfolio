@@ -155,7 +155,7 @@ export default function PricingPage() {
         description: `${selectedPlan} Premium Plan`,
         order_id: order.id,
         prefill: { email: user.email },
-        theme: { color: '#2563EB' },
+        theme: { color: '#1D4ED8' },
         handler: (response) => {
           setCheckoutOpen(false)
           setBusy(false)
@@ -165,7 +165,7 @@ export default function PricingPage() {
               refreshProfile()
               toast(`Premium activated! (${selectedPlan} plan)`)
             } else {
-              toast('Payment is processing. Premium activates within a minute or two.', 'error')
+              toast('Payment is processing. Premium activates within a few minutes — if not, contact jobkarsupport@gmail.com', 'error')
             }
           })
         },

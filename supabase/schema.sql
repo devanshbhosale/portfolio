@@ -97,6 +97,19 @@ create table public.withdrawal_requests (
   reversed_by uuid references public.profiles(id)
 );
 
+-- Per-user job memory (saved ♥ / applied ✓) synced by the website for
+-- logged-in users; localStorage remains the guest cache (lib/jobMarks.ts).
+create table public.job_marks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  job_id uuid not null references public.job_listings(id) on delete cascade,
+  saved boolean not null default false,
+  applied boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, job_id)
+);
+
 -- Single-row site configuration.
 create table public.site_settings (
   id int primary key default 1 check (id = 1),
@@ -115,8 +128,10 @@ create table public.site_settings (
 -- Idempotent for existing databases (column added 2026-08-22).
 alter table public.site_settings add column if not exists premium_ratio numeric not null default 0.35;
 
--- Live-sync sentinel: bumped by a trigger whenever job_listings changes, so
--- the public /jobs page can silently refetch on realtime.
+-- Live-sync sentinel: bumped by a trigger whenever job_listings changes.
+-- (2026-08-24: the website no longer holds a realtime socket on /jobs — it
+-- refetches on window focus / a visible-tab interval instead. The bump
+-- trigger stays as a change-detection sentinel for future consumers.)
 create table public.jobs_version (
   id int primary key default 1 check (id = 1),
   version bigint not null default 0
@@ -127,6 +142,7 @@ create index on public.job_listings (agent_id);
 create index on public.premium_purchases (user_id);
 create index on public.premium_purchases (referrer_user_id);
 create index on public.withdrawal_requests (user_id, status);
+create index on public.job_marks (user_id);
 
 -- ─── Row Level Security ─────────────────────────────────────────────
 
@@ -136,6 +152,7 @@ alter table public.premium_purchases enable row level security;
 alter table public.withdrawal_requests enable row level security;
 alter table public.site_settings     enable row level security;
 alter table public.jobs_version      enable row level security;
+alter table public.job_marks         enable row level security;
 
 -- Operator gate (security definer so policies/RPCs can read profiles).
 create or replace function public.is_operator()
@@ -172,6 +189,16 @@ create policy "withdrawals operator read" on public.withdrawal_requests
   for select using (public.is_operator());
 -- No anon insert: withdrawals go through /api/withdrawals (request_withdrawal RPC).
 
+-- job_marks: users sync their own saved/applied job memory (website login merge).
+create policy "job marks read own" on public.job_marks
+  for select using (user_id = auth.uid());
+create policy "job marks insert own" on public.job_marks
+  for insert with check (user_id = auth.uid());
+create policy "job marks update own" on public.job_marks
+  for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "job marks delete own" on public.job_marks
+  for delete using (user_id = auth.uid());
+
 -- site_settings: public read (pricing needs it); no operator write policy.
 create policy "settings public read" on public.site_settings
   for select using (true);
@@ -202,6 +229,15 @@ grant select on public.operator_profiles to authenticated;
 -- table path is this view, so no RLS bypass of the premium contact_info
 -- gate is created; operator_profiles keeps security_invoker because ITS
 -- rows do depend on the caller.
+--
+-- 2026-08-24 paywall lock: SELECT is revoked from anon/authenticated below.
+-- The view was always "safe columns" but it still shipped apply_url, full
+-- title/company and description of premium rows to any anon caller — the
+-- CSS blur on the site was cosmetic. Job-list reads now happen ONLY
+-- server-side: the website's /api/jobs route (service role) applies the
+-- entitlement check and redacts premium fields before anything reaches a
+-- browser (lib/jobRedaction.ts). The view itself stays as the service-role
+-- read path (detail pages, sitemap).
 create or replace view public.public_jobs as
 select id, title, company, location, salary_range, experience, description,
        tags, is_premium, is_featured, featured_until, expires_at,
@@ -211,7 +247,9 @@ where status = 'approved'
   and (expires_at is null or expires_at > now())
   and stale_at is null;
 
-grant select on public.public_jobs to anon, authenticated;
+-- The ONLY grant on this view: none for anon/authenticated. Applying this to
+-- an existing DB lives in live-fixes/2026-08-24-paywall-lock-and-job-marks.sql.
+revoke select on public.public_jobs from anon, authenticated;
 
 -- ─── Public tags view (dynamic website filters) ─────────────────────
 -- Distinct tags across the same approved/unexpired/non-stale rows as

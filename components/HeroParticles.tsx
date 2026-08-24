@@ -54,7 +54,7 @@ export default function HeroParticles({ className = '' }: { className?: string }
           const dy = a.y - b.y
           const dist = Math.hypot(dx, dy)
           if (dist >= LINK_DIST) continue
-          ctx.strokeStyle = `rgba(37, 99, 235, ${LINE_ALPHA * (1 - dist / LINK_DIST)})`
+          ctx.strokeStyle = `rgba(29, 78, 216, ${LINE_ALPHA * (1 - dist / LINK_DIST)})`
           ctx.beginPath()
           ctx.moveTo(a.x + ox * 0.4, a.y + oy * 0.4)
           ctx.lineTo(b.x + ox * 0.4, b.y + oy * 0.4)
@@ -62,7 +62,7 @@ export default function HeroParticles({ className = '' }: { className?: string }
         }
       }
 
-      ctx.fillStyle = `rgba(37, 99, 235, ${DOT_ALPHA})`
+      ctx.fillStyle = `rgba(29, 78, 216, ${DOT_ALPHA})`
       for (const p of particles) {
         ctx.beginPath()
         ctx.arc(p.x + ox, p.y + oy, 1.6, 0, Math.PI * 2)

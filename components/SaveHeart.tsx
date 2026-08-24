@@ -2,9 +2,12 @@
 import { useEffect, useState } from 'react'
 import { Heart } from 'lucide-react'
 import { savedSet, toggleSaved } from '@/lib/savedJobs'
+import { setSavedRemote } from '@/lib/jobMarks'
+import { useAuth } from '@/contexts/AuthContext'
 
-/** Per-browser save toggle. Self-reads on mount; onToggle lets the /jobs feed
- *  refresh its saved-set copy so the "Saved" tier filter stays current. */
+/** Per-browser save toggle with account sync for logged-in users.
+ *  Self-reads on mount; onToggle lets the /jobs feed refresh its saved-set
+ *  copy so the "Saved" tier filter stays current. */
 export default function SaveHeart({
   jobId,
   size = 16,
@@ -14,6 +17,7 @@ export default function SaveHeart({
   size?: number
   onToggle?: (jobId: string) => void
 }) {
+  const { user } = useAuth()
   const [saved, setSaved] = useState(false)
   const [ready, setReady] = useState(false)
 
@@ -27,6 +31,7 @@ export default function SaveHeart({
     e.stopPropagation()
     const next = toggleSaved(window.localStorage, jobId)
     setSaved(next.has(jobId))
+    if (user) setSavedRemote(user.id, jobId, next.has(jobId))
     onToggle?.(jobId)
   }
 

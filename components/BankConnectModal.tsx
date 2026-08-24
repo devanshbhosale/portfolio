@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Landmark } from 'lucide-react'
 import Button from '@/components/ui/Button'
@@ -85,6 +86,10 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
               </div>
               <h3 className="text-xl font-bold text-gray-900">Connect Bank Account</h3>
               <p className="text-sm text-gray-500 mt-1">Enter your bank details for withdrawals.</p>
+              <p className="mt-1 text-xs text-gray-500">
+                Used only to send your payouts — never shared.{' '}
+                <Link href="/privacy" className="underline hover:text-primary-600">Privacy Policy</Link>
+              </p>
             </div>
             <div className="space-y-4">
               <div>

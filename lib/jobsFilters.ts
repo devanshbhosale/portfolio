@@ -1,4 +1,4 @@
-import type { PublicJob } from '@/lib/database.types'
+import { isTeaser, type ApiJob } from '@/lib/jobRedaction'
 
 export type Tier = 'all' | 'free' | 'premium' | 'saved'
 
@@ -50,14 +50,17 @@ export function matchTag(jobTags: string[] | null | undefined, tag: string): boo
 }
 
 export function filterJobs(
-  jobs: PublicJob[],
+  jobs: ApiJob[],
   f: JobFilters,
   savedIds: ReadonlySet<string>,
-): PublicJob[] {
+): ApiJob[] {
   const q = f.search.trim().toLowerCase()
   const loc = f.location.trim().toLowerCase()
   return jobs.filter((job) => {
-    if (q && !(job.title.toLowerCase().includes(q) || job.company.toLowerCase().includes(q))) return false
+    // Teasers carry a title_prefix + placeholder company, not full identity.
+    const title = (isTeaser(job) ? job.title_prefix : job.title).toLowerCase()
+    const company = job.company.toLowerCase()
+    if (q && !(title.includes(q) || company.includes(q))) return false
     if (loc && !(job.location ?? '').toLowerCase().includes(loc)) return false
     if (!matchTag(job.tags, f.tag)) return false
     if (f.tier === 'free' && job.is_premium) return false

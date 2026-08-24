@@ -43,5 +43,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/profile', '/login'],
+  // / and /jobs are in the matcher so Supabase session refresh (token
+  // rotation) runs on the highest-traffic pages too — without it, a rotated
+  // refresh token set during an RSC render is dropped → silent logouts.
+  matcher: ['/', '/jobs/:path*', '/dashboard/:path*', '/profile', '/login'],
 }

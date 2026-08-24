@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { hydrateMarks } from '@/lib/jobMarks'
 import type { ProfileRow, UserRole } from '@/lib/database.types'
 
 export interface AuthUser {
@@ -64,6 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
       if (!error && profile) {
         if (mounted.current) setUser(toAuthUser(session, profile))
+        // Merge this device's saved/applied marks into the account (union;
+        // account becomes source of truth). Fire-and-forget — guests keep
+        // localStorage-only memory and never hit this path.
+        hydrateMarks(session.user.id).catch(() => {})
         return
       }
       if (attempt === 0) await new Promise((r) => setTimeout(r, 500))

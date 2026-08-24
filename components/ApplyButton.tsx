@@ -1,11 +1,14 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
-import { appliedSet, markApplied } from '@/lib/savedJobs'
+import { appliedSet, markApplied, savedSet } from '@/lib/savedJobs'
+import { markAppliedRemote } from '@/lib/jobMarks'
+import { useAuth } from '@/contexts/AuthContext'
 
-/** Apply link that records a per-browser "Applied ✓" state on click, so
- *  jobseekers can see which listings they already went for. */
+/** Apply link that records an "Applied ✓" state on click (device + account
+ *  when logged in), so jobseekers can see which listings they went for. */
 export default function ApplyButton({ jobId, href }: { jobId: string; href: string }) {
+  const { user } = useAuth()
   const [applied, setApplied] = useState(false)
 
   useEffect(() => {
@@ -21,6 +24,7 @@ export default function ApplyButton({ jobId, href }: { jobId: string; href: stri
         onClick={() => {
           markApplied(window.localStorage, jobId)
           setApplied(true)
+          if (user) markAppliedRemote(user.id, jobId, savedSet(window.localStorage).has(jobId))
         }}
         className="inline-flex items-center justify-center rounded-lg font-semibold bg-primary-600 text-white hover:bg-primary-700 px-6 py-3 text-base transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
       >

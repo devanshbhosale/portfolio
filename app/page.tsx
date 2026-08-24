@@ -1,5 +1,3 @@
-'use client'
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, ShieldCheck, Users, Gift } from 'lucide-react'
 import Button from '@/components/ui/Button'
@@ -7,45 +5,36 @@ import HeroParticles from '@/components/HeroParticles'
 import DecodeHeading from '@/components/DecodeHeading'
 import JobCard from '@/components/JobCard'
 import BlurredJobCard from '@/components/BlurredJobCard'
-import SkeletonLoader from '@/components/SkeletonLoader'
 import StatsCounter from '@/components/StatsCounter'
-import { supabase } from '@/lib/supabase'
+import { adminClient, getAuthedProfile, isPremiumActive } from '@/lib/server'
+import { isTeaser, redactJob } from '@/lib/jobRedaction'
 import type { PublicJob } from '@/lib/database.types'
 
-interface Stats {
-  activeJobs: number
-  premiumJobs: number
-  freshJobs: number
-}
+export const dynamic = 'force-dynamic'
 
-export default function LandingPage() {
-  const [jobs, setJobs] = useState<PublicJob[] | null>(null)
-  const [stats, setStats] = useState<Stats | null>(null)
+export default async function LandingPage() {
+  // Server-side fetch + entitlement redaction: premium fields never enter
+  // an unentitled browser's payload (viewer-dependent → force-dynamic).
+  const unlocked = isPremiumActive(await getAuthedProfile())
+  const db = adminClient()
 
-  useEffect(() => {
-    supabase
-      .from('public_jobs')
-      .select('*')
-      .order('approved_at', { ascending: false })
-      .limit(6)
-      .then(({ data }) => setJobs((data as PublicJob[]) ?? []))
+  const { data: latest } = await db
+    .from('public_jobs')
+    .select('*')
+    .order('approved_at', { ascending: false })
+    .limit(6)
+  const rows = ((latest ?? []) as PublicJob[]).map((j) => redactJob(j, unlocked))
 
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    Promise.all([
-      supabase.from('public_jobs').select('*', { count: 'exact', head: true }),
-      supabase.from('public_jobs').select('*', { count: 'exact', head: true }).eq('is_premium', true),
-      supabase.from('public_jobs').select('*', { count: 'exact', head: true }).gte('approved_at', weekAgo),
-    ]).then(([all, premium, fresh]) => {
-      setStats({
-        activeJobs: all.count ?? 0,
-        premiumJobs: premium.count ?? 0,
-        freshJobs: fresh.count ?? 0,
-      })
-    })
-  }, [])
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const [all, premium, fresh] = await Promise.all([
+    db.from('public_jobs').select('*', { count: 'exact', head: true }),
+    db.from('public_jobs').select('*', { count: 'exact', head: true }).eq('is_premium', true),
+    db.from('public_jobs').select('*', { count: 'exact', head: true }).gte('approved_at', weekAgo),
+  ])
+  const stats = { activeJobs: all.count ?? 0, premiumJobs: premium.count ?? 0, freshJobs: fresh.count ?? 0 }
 
-  const freeJobs = (jobs ?? []).filter((j) => !j.is_premium).slice(0, 3)
-  const premiumSample = (jobs ?? []).filter((j) => j.is_premium).slice(0, 3)
+  const freeJobs = rows.filter((j): j is PublicJob => !j.is_premium).slice(0, 3)
+  const premiumSample = rows.filter((j) => j.is_premium).slice(0, 3)
 
   return (
     <div className="bg-white">
@@ -59,12 +48,12 @@ export default function LandingPage() {
             transition={{ duration: 0.6, type: 'spring', stiffness: 120 }}
             className="text-4xl md:text-6xl font-extrabold tracking-tighter text-gray-900"
           >
-            <DecodeHeading segments={[{ text: 'Find Your Next Job, ' }]} />
+            <DecodeHeading segments={[{ text: 'Find Verified Jobs,' }]} />
             <br className="hidden md:block" />
             <DecodeHeading
               segments={[
-                { text: 'Earn Rewards', className: 'text-primary-600' },
-                { text: ' by Referring' },
+                { text: 'Near You', className: 'text-primary-600' },
+                { text: ' Today' },
               ]}
             />
           </motion.h1>
@@ -74,7 +63,7 @@ export default function LandingPage() {
             transition={{ delay: 0.2, duration: 0.6 }}
             className="mt-6 text-lg md:text-xl text-gray-600 max-w-2xl mx-auto"
           >
-            Jobkar brings blue‑collar job listings with premium exclusives. Refer friends and earn 20%+ commission on every plan they buy.
+            Jobkar brings fresh blue‑collar job listings with salary details upfront — browse free and apply directly. Refer friends and earn 20%+ when they go premium.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -121,20 +110,16 @@ export default function LandingPage() {
             <h2 className="text-3xl font-bold text-gray-900">Latest Opportunities</h2>
             <p className="mt-2 text-gray-600">A mix of free and premium listings</p>
           </div>
-          {jobs === null ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => <SkeletonLoader key={i} />)}
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {freeJobs.map((job, i) => (
-                <JobCard key={job.id} job={job} index={i} />
-              ))}
-              {premiumSample.map((job, i) => (
-                <BlurredJobCard key={job.id} job={job} index={i} onLockClick={() => window.location.assign('/pricing')} />
-              ))}
-            </div>
-          )}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {freeJobs.map((job, i) => (
+              <JobCard key={job.id} job={job} index={i} />
+            ))}
+            {premiumSample.map((job, i) => (
+              isTeaser(job)
+                ? <BlurredJobCard key={job.id} job={job} index={i} />
+                : <JobCard key={job.id} job={job} index={i} isPremium />
+            ))}
+          </div>
           <div className="text-center mt-10">
             <Button href="/jobs" variant="outline" size="lg">View All Jobs</Button>
           </div>
@@ -143,11 +128,10 @@ export default function LandingPage() {
 
       <section className="py-16 bg-primary-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <StatsCounter value={stats?.activeJobs ?? 0} label="Active Jobs" />
-            <StatsCounter value={stats?.premiumJobs ?? 0} label="Premium Listings" />
-            <StatsCounter value={stats?.freshJobs ?? 0} label="New This Week" />
-            <StatsCounter value={98} label="Success Rate" suffix="%" />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+            <StatsCounter value={stats.activeJobs} label="Active Jobs" />
+            <StatsCounter value={stats.premiumJobs} label="Premium Listings" />
+            <StatsCounter value={stats.freshJobs} label="New This Week" />
           </div>
         </div>
       </section>

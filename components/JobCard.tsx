@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { MapPin, Briefcase, Clock, Tag, Star, Crown } from 'lucide-react'
+import { MapPin, Briefcase, IndianRupee, Tag, Star, Crown } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { PublicJob } from '@/lib/database.types'
 
@@ -50,7 +50,7 @@ export default function JobCard({ job, index = 0, isPremium = false, action }: J
         <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
           {job.location && <span className="inline-flex items-center gap-1"><MapPin size={14} aria-hidden /> {job.location}</span>}
           {job.experience && <span className="inline-flex items-center gap-1"><Briefcase size={14} aria-hidden /> {job.experience}</span>}
-          {job.salary_range && <span className="inline-flex items-center gap-1"><Clock size={14} aria-hidden /> {job.salary_range}</span>}
+          {job.salary_range && <span className="inline-flex items-center gap-1"><IndianRupee size={14} aria-hidden /> {job.salary_range}</span>}
         </div>
         {(job.tags ?? []).length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">

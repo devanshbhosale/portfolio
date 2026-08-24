@@ -30,7 +30,11 @@ where status = 'approved'
   and (expires_at is null or expires_at > now())
   and stale_at is null;
 
-grant select on public.public_jobs to anon, authenticated;
+-- 2026-08-24: the grant below was replaced by a REVOKE — job reads are
+-- server-side only now (see 2026-08-24-paywall-lock-and-job-marks.sql).
+-- Kept as a revoke here so re-running this historical fix can never
+-- silently restore public access to premium fields.
+revoke select on public.public_jobs from anon, authenticated;
 
 -- Clean up the two junk listings from earlier scrape testing
 -- ('Additional Details' was a scraped section header approved by accident;

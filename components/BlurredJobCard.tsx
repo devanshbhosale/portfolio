@@ -1,15 +1,21 @@
 'use client'
 import { motion } from 'framer-motion'
 import { Lock, Eye } from 'lucide-react'
-import type { PublicJob } from '@/lib/database.types'
+import { useRouter } from 'next/navigation'
+import type { TeaserJob } from '@/lib/jobRedaction'
 
 interface BlurredJobCardProps {
-  job: PublicJob
+  job: TeaserJob
   index?: number
-  onLockClick: () => void
+  /** Optional override (client pages pop the PaywallModal); default
+   *  navigates to /pricing — server pages can't pass functions. */
+  onLockClick?: () => void
 }
 
 export default function BlurredJobCard({ job, index = 0, onLockClick }: BlurredJobCardProps) {
+  const router = useRouter()
+  const lock = () => (onLockClick ? onLockClick() : router.push('/pricing'))
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -18,10 +24,11 @@ export default function BlurredJobCard({ job, index = 0, onLockClick }: BlurredJ
       whileHover={{ y: -4 }}
       className="relative bg-white rounded-xl p-5 border border-gray-200 shadow-sm cursor-pointer group"
     >
+      {/* Styling only — the server already redacted premium fields. */}
       <div className="blur-premium select-none" aria-hidden>
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 opacity-30">{job.title.slice(0, 3)}…</h3>
+            <h3 className="text-lg font-bold text-gray-900 opacity-30">{job.title_prefix}…</h3>
             <p className="text-sm text-gray-600 opacity-30">{job.company}</p>
           </div>
         </div>
@@ -33,8 +40,8 @@ export default function BlurredJobCard({ job, index = 0, onLockClick }: BlurredJ
 
       <button
         className="absolute inset-0 flex flex-col items-center justify-center bg-white/40 backdrop-blur-sm opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity focus:opacity-100 rounded-xl"
-        onClick={onLockClick}
-        aria-label={`Unlock premium job: ${job.title.slice(0, 3)}… — view plans`}
+        onClick={lock}
+        aria-label={`Unlock premium job: ${job.title_prefix}… — view plans`}
       >
         <div className="text-center p-4">
           <Lock className="mx-auto text-primary-600 mb-2" size={24} aria-hidden />

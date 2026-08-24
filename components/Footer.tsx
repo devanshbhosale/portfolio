@@ -3,13 +3,13 @@ import { Zap } from 'lucide-react'
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300 py-12 mt-20">
+    <footer className="bg-navy-800 text-gray-300 py-12 mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Zap size={24} className="text-primary-500" />
-              <span className="text-xl font-bold text-white">Jobkar</span>
+              <span className="text-xl font-bold text-white font-display">Jobkar</span>
             </div>
             <p className="text-sm">Premium blue‑collar job listings with referral rewards.</p>
           </div>
@@ -41,7 +41,7 @@ export default function Footer() {
             </p>
           </div>
         </div>
-        <div className="border-t border-gray-800 mt-8 pt-6 text-center text-sm">
+        <div className="border-t border-navy-900 mt-8 pt-6 text-center text-sm">
           © {new Date().getFullYear()} Jobkar. All rights reserved.
         </div>
       </div>

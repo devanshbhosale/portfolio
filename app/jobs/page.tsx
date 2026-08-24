@@ -13,10 +13,10 @@ import {
   DEFAULT_FILTERS, filterJobs, filtersFromParams, filtersToParams,
   type JobFilters, type Tier,
 } from '@/lib/jobsFilters'
+import { isTeaser, type ApiJob } from '@/lib/jobRedaction'
+import { PAGE_SIZE } from '@/lib/jobsQuery'
 import { savedSet, toggleSaved } from '@/lib/savedJobs'
 import type { PublicJob } from '@/lib/database.types'
-
-const PAGE_SIZE = 9
 
 const TIER_OPTIONS: { value: Tier; label: string; icon?: 'heart' }[] = [
   { value: 'all', label: 'All' },
@@ -25,11 +25,13 @@ const TIER_OPTIONS: { value: Tier; label: string; icon?: 'heart' }[] = [
   { value: 'saved', label: 'Saved', icon: 'heart' },
 ]
 
+const isFullJob = (j: ApiJob): j is PublicJob => !isTeaser(j)
+
 export default function JobsPage() {
   const { user } = useAuth()
   const isPremium = Boolean(user?.premium)
 
-  const [jobs, setJobs] = useState<PublicJob[]>([])
+  const [jobs, setJobs] = useState<ApiJob[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,29 +46,32 @@ export default function JobsPage() {
   // overwrite a newer one — only the latest invocation writes state.
   const reqSeq = useRef(0)
 
-  const load = useCallback(async (from: number, replace: boolean) => {
+  // All job data comes from /api/jobs — the server applies entitlement
+  // redaction before anything reaches this browser.
+  const load = useCallback(async (page: number, replace: boolean) => {
     const seq = ++reqSeq.current
-    let query = supabase
-      .from('public_jobs')
-      .select('*')
-      .order('is_featured', { ascending: false })
-      .order('approved_at', { ascending: false })
-      .range(from, from + PAGE_SIZE - 1)
     // Free/Premium tier filtering is server-side: with hundreds of jobs the
     // first page may not contain any premium rows, and client-side filtering
     // would then wrongly report "0 jobs match".
-    if (filters.tier === 'premium') query = query.eq('is_premium', true)
-    else if (filters.tier === 'free') query = query.eq('is_premium', false)
-    if (replace && from === 0) query = query.limit(PAGE_SIZE)
-    const { data, error: err } = await query
-    if (seq !== reqSeq.current) return false // superseded by a newer load
-    if (err) {
+    const params = new URLSearchParams({ page: String(page) })
+    if (filters.tier === 'premium') params.set('tier', 'premium')
+    else if (filters.tier === 'free') params.set('tier', 'free')
+    let res: Response
+    try {
+      res = await fetch(`/api/jobs?${params}`)
+    } catch {
+      if (seq !== reqSeq.current) return false
       setError('Could not load jobs. Please retry.')
       return false
     }
-    const rows = (data ?? []) as PublicJob[]
+    if (seq !== reqSeq.current) return false // superseded by a newer load
+    if (!res.ok) {
+      setError('Could not load jobs. Please retry.')
+      return false
+    }
+    const { jobs: rows, hasMore: more } = (await res.json()) as { jobs: ApiJob[]; hasMore: boolean }
     setJobs((prev) => (replace ? rows : [...prev, ...rows]))
-    setHasMore(rows.length === PAGE_SIZE)
+    setHasMore(more && rows.length === PAGE_SIZE)
     setError(null)
     return true
   }, [filters.tier])
@@ -102,22 +107,24 @@ export default function JobsPage() {
     load(0, true).finally(() => setLoading(false))
   }, [load])
 
-  // Live sync: silently refetch when the desktop dashboard bumps jobs_version.
+  // Live sync without a socket: silent refetch on tab focus + a 90s tick
+  // that only fires while the tab is visible (budget phones, metered data).
   useEffect(() => {
-    const channel = supabase
-      .channel('jobs-version-feed')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs_version' }, () => {
-        load(0, true)
-      })
-      .subscribe()
+    const onFocus = () => load(0, true)
+    const onTick = () => {
+      if (document.visibilityState === 'visible') load(0, true)
+    }
+    window.addEventListener('focus', onFocus)
+    const timer = window.setInterval(onTick, 90_000)
     return () => {
-      supabase.removeChannel(channel)
+      window.removeEventListener('focus', onFocus)
+      window.clearInterval(timer)
     }
   }, [load])
 
   const loadMore = async () => {
     setLoadingMore(true)
-    await load(jobs.length, false)
+    await load(jobs.length / PAGE_SIZE, false)
     setLoadingMore(false)
   }
 
@@ -229,12 +236,14 @@ export default function JobsPage() {
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Free Listings</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {freeJobs.map((job, idx) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    index={idx}
-                    action={<SaveHeart jobId={job.id} onToggle={onHeartToggle} />}
-                  />
+                  isFullJob(job) && (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      index={idx}
+                      action={<SaveHeart jobId={job.id} onToggle={onHeartToggle} />}
+                    />
+                  )
                 ))}
               </div>
             </div>
@@ -248,7 +257,7 @@ export default function JobsPage() {
               </h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {premiumJobs.map((job, idx) => (
-                  isPremium ? (
+                  isFullJob(job) ? (
                     <JobCard
                       key={job.id}
                       job={job}

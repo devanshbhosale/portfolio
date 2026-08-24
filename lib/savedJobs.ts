@@ -53,3 +53,12 @@ export function markApplied(store: MemoryStore, jobId: string): void {
   next.add(jobId)
   writeSet(store, APPLIED_KEY, next)
 }
+
+/** Persist a full set (login merge in lib/jobMarks writes the union back). */
+export function writeSavedSet(store: MemoryStore, set: Set<string>): void {
+  writeSet(store, SAVED_KEY, set)
+}
+
+export function writeAppliedSet(store: MemoryStore, set: Set<string>): void {
+  writeSet(store, APPLIED_KEY, set)
+}

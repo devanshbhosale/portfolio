@@ -83,6 +83,16 @@ export type WithdrawalRequestRow = {
   reversed_by: string | null
 }
 
+export type JobMarkRow = {
+  id: string
+  user_id: string
+  job_id: string
+  saved: boolean
+  applied: boolean
+  created_at: string
+  updated_at: string
+}
+
 export type SiteSettingsRow = {
   id: number
   price_weekly: number
@@ -227,6 +237,20 @@ export type Database = {
         Update: { version?: number }
         Relationships: []
       }
+      job_marks: {
+        Row: JobMarkRow
+        // Flags optional on insert: partial upserts touch only payload
+        // columns (toggling saved must never reset applied, and vice versa).
+        Insert: Omit<JobMarkRow, 'id' | 'created_at' | 'updated_at' | 'saved' | 'applied'> & {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          saved?: boolean
+          applied?: boolean
+        }
+        Update: Partial<Omit<JobMarkRow, 'id' | 'created_at' | 'user_id' | 'job_id'>>
+        Relationships: []
+      }
     }
     Views: {
       public_jobs: { Row: PublicJob; Relationships: [] }
@@ -244,6 +268,7 @@ export type Database = {
           p_payment_id: string
           p_order_id: string | null
           p_referral_code: string | null
+          p_expected_paise: number
         }
         Returns: Json
       }

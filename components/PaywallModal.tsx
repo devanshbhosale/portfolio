@@ -47,7 +47,7 @@ export default function PaywallModal({ isOpen, onClose }: PaywallModalProps) {
               </div>
               <h3 className="text-xl font-bold text-gray-900">Unlock Premium Jobs</h3>
               <p className="mt-2 text-gray-600">
-                This job listing is exclusive to premium members. Upgrade to view full details, salary, and direct HR contacts.
+                This job listing is exclusive to premium members. Upgrade for the direct HR contact, one-tap apply, and the full listing details.
               </p>
               <div className="mt-6 space-y-3">
                 <Button fullWidth variant="accent" size="lg" onClick={goToPricing}>

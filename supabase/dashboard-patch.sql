@@ -99,7 +99,10 @@ from public.job_listings
 where status = 'approved'
   and (expires_at is null or expires_at > now())
   and stale_at is null;
-grant select on public.public_jobs to anon, authenticated;
+-- 2026-08-24: grant replaced with revoke — job reads are server-side only
+-- (website /api/jobs + entitlement redaction). See
+-- live-fixes/2026-08-24-paywall-lock-and-job-marks.sql.
+revoke select on public.public_jobs from anon, authenticated;
 
 -- 9. Moderation + live-sync triggers.
 create or replace function public.job_listings_insert_guard()

@@ -23,7 +23,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self'",
-      "connect-src 'self' ws: wss: https:",
+      "connect-src 'self' https:",
       "frame-src 'self' https://*.razorpay.com https://*.wra-api.net",
       "object-src 'none'",
       "base-uri 'self'",

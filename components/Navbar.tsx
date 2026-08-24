@@ -29,25 +29,25 @@ export default function Navbar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-navy-700/95 backdrop-blur-md border-b border-navy-800">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between" aria-label="Main">
         <Link href="/" className="flex items-center gap-2">
           <motion.span
             initial={{ rotate: -10, opacity: 0 }}
             animate={{ rotate: 0, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
-            className="text-primary-600"
+            className="text-primary-500"
           >
             <Zap size={28} strokeWidth={2.5} aria-hidden />
           </motion.span>
-          <span className="text-2xl font-extrabold tracking-tighter text-gray-900">
-            Job<span className="text-primary-600">kar</span>
+          <span className="text-2xl font-extrabold tracking-tighter text-white font-display">
+            Job<span className="text-primary-500">kar</span>
           </span>
         </Link>
 
         <div className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+            <Link key={link.href} href={link.href} className="text-gray-300 hover:text-white font-medium transition-colors">
               {link.label}
             </Link>
           ))}
@@ -55,7 +55,7 @@ export default function Navbar() {
             <span className="text-sm text-gray-400" aria-label="Loading">…</span>
           ) : user ? (
             <div className="flex items-center gap-3">
-              <Link href="/profile" className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
+              <Link href="/profile" className="flex items-center gap-2 text-gray-300 hover:text-white">
                 <UserCircle size={20} aria-hidden />
                 <span>{user.name}</span>
               </Link>
@@ -65,7 +65,7 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium">Log in</Link>
+              <Link href="/login" className="text-gray-300 hover:text-white font-medium">Log in</Link>
               <Button size="sm" href="/signup">Sign up</Button>
             </div>
           )}
@@ -87,7 +87,7 @@ export default function Navbar() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="md:hidden bg-white border-b border-gray-200 overflow-hidden"
+            className="md:hidden bg-navy-700 border-b border-navy-800 overflow-hidden"
           >
             <div className="px-4 pt-2 pb-4 space-y-1">
               {navLinks.map((link) => (
@@ -95,14 +95,14 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block py-3 text-gray-600 hover:text-gray-900"
+                  className="block py-3 text-gray-300 hover:text-white"
                 >
                   {link.label}
                 </Link>
               ))}
               {authLoading ? null : user ? (
                 <div className="pt-2 flex items-center gap-3">
-                  <Link href="/profile" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 text-gray-700">
+                  <Link href="/profile" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 text-gray-300">
                     <UserCircle size={20} aria-hidden /> {user.name}
                   </Link>
                   <Button variant="outline" size="sm" onClick={handleLogout}>Logout</Button>

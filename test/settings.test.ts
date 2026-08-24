@@ -14,6 +14,7 @@ function row(overrides: Partial<SiteSettingsRow> = {}): SiteSettingsRow {
     withdraw_threshold: d.withdrawThreshold,
     job_ttl_days: d.jobTtlDays,
     featured_days: d.featuredDays,
+    premium_ratio: 0.35, // schema.sql default (owner-only; not in SiteSettings)
     updated_at: new Date().toISOString(),
     ...overrides,
   }
