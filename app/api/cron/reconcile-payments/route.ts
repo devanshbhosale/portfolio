@@ -12,8 +12,10 @@ export const dynamic = 'force-dynamic'
  *  nothing replays it — purchases are only written at fulfillment. This cron
  *  lists recent payments straight from Razorpay and replays each captured
  *  one through the idempotent process_payment RPC ('duplicate' is success).
- *  Two schedules: every 15 min over the last 24h (fast recovery) and a daily
- *  7-day deep sweep (nothing slips through permanently). */
+ *  Scheduled daily at 06:00 with a 7-day window (Hobby plan allows only
+ *  once-daily crons) — a dropped webhook heals within ≤24h. For 15-min
+ *  recovery, point a free external pinger (e.g. cron-job.org) at this path
+ *  with the CRON_SECRET bearer header; the route itself is unchanged. */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET
   const auth = req.headers.get('authorization')
