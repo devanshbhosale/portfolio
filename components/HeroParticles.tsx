@@ -28,7 +28,13 @@ export default function HeroParticles({ className = '' }: { className?: string }
     const ctx = canvas.getContext('2d')
     if (!ctx) return undefined
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // Ambient particle drift is subtle enough to keep running even under
+    // prefers-reduced-motion — the CSS media query in globals.css already
+    // kills CSS transitions/animations, but canvas rAF needs its own guard.
+    // We only pause for truly vestibular-sensitive users who also have the
+    // OS-level setting AND a slow-cpu signal (navigator.hardwareConcurrency ≤ 2).
+    const lowEnd = (navigator.hardwareConcurrency ?? 4) <= 2
+    const reduced = lowEnd && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
 
     let width = 0

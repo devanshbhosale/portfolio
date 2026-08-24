@@ -35,26 +35,14 @@ export default function DecodeHeading({
     if (!el) return undefined
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
 
-    let played = false
-    try {
-      played = window.sessionStorage.getItem('jobkar-decode-v1') === '1'
-    } catch {
-      /* private mode: play on every mount */
-    }
-    if (played) return undefined
+    // Always animate on mount — the decode effect is a signature brand moment
+    // that should greet every visitor, not just first-timers. The animation is
+    // short (1.3s) and non-distracting, so replaying is fine.
 
     const spans = Array.from(el.children) as HTMLSpanElement[]
     const originals = chars.map((c) => c.ch)
     let raf = 0
     const start = performance.now()
-
-    const markPlayed = () => {
-      try {
-        window.sessionStorage.setItem('jobkar-decode-v1', '1')
-      } catch {
-        /* noop */
-      }
-    }
 
     const frame = (now: number) => {
       const progress = clamp((now - start) / Math.max(1, duration), 0, 1)
@@ -76,7 +64,7 @@ export default function DecodeHeading({
         originals.forEach((ch, i) => {
           spans[i].textContent = ch
         })
-        markPlayed()
+
       }
     }
 
