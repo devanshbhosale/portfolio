@@ -10,9 +10,11 @@ import { useEffect, useRef } from 'react'
 
 type Particle = { x: number; y: number; vx: number; vy: number }
 
-const LINK_DIST = 110          // px — max distance for connecting lines
-const LINE_ALPHA = 0.16        // peak line opacity over the light hero
-const DOT_ALPHA = 0.45
+const LINK_DIST = 130          // px — max distance for connecting lines
+const LINE_ALPHA = 0.32        // peak line opacity (doubled for visibility)
+const DOT_ALPHA = 0.75         // dot opacity (was 0.45)
+const DOT_RADIUS = 2.4         // px (was 1.6)
+const LINE_WIDTH = 1.4         // px (was 1)
 const PARALLAX = 14            // px — how far the field drifts with the pointer
 const EASE = 0.05              // pointer easing per frame (repo default)
 
@@ -51,7 +53,7 @@ export default function HeroParticles({ className = '' }: { className?: string }
       const oy = (mouse.y - 0.5) * PARALLAX
 
       // connective lines first so dots sit on top
-      ctx.lineWidth = 1
+      ctx.lineWidth = LINE_WIDTH
       for (let i = 0; i < particles.length; i += 1) {
         const a = particles[i]
         for (let j = i + 1; j < particles.length; j += 1) {
@@ -71,7 +73,7 @@ export default function HeroParticles({ className = '' }: { className?: string }
       ctx.fillStyle = `rgba(29, 78, 216, ${DOT_ALPHA})`
       for (const p of particles) {
         ctx.beginPath()
-        ctx.arc(p.x + ox, p.y + oy, 1.6, 0, Math.PI * 2)
+        ctx.arc(p.x + ox, p.y + oy, DOT_RADIUS, 0, Math.PI * 2)
         ctx.fill()
       }
     }
