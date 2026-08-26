@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { withdrawalSchema, bankConnectSchema, ifscSchema, accountNumberSchema } from '@/lib/validation'
+import { withdrawalSchema, bankConnectSchema, ifscSchema, accountNumberSchema, createOrderSchema } from '@/lib/validation'
 
 describe('withdrawalSchema — request_withdrawal input', () => {
   it('accepts a positive amount and coerces numeric strings', () => {
@@ -43,6 +43,28 @@ describe('bank account validation (used for settlement)', () => {
     expect(
       bankConnectSchema.safeParse({ holderName: 'Ram Kumar', accountNumber: '12345678', ifsc: 'HDFC0001234' }).success,
     ).toBe(false)
+  })
+})
+
+describe('createOrderSchema — offered plan gate (server-side)', () => {
+  it('accepts every offered plan', () => {
+    expect(createOrderSchema.safeParse({ plan: 'Weekly' }).success).toBe(true)
+    expect(createOrderSchema.safeParse({ plan: 'Monthly' }).success).toBe(true)
+    expect(createOrderSchema.safeParse({ plan: 'Lifetime' }).success).toBe(true)
+  })
+
+  it('rejects retired and invented plans', () => {
+    // Quarterly/Annual are no longer sold — an order for them must fail here,
+    // before any Razorpay order exists.
+    expect(createOrderSchema.safeParse({ plan: 'Quarterly' }).success).toBe(false)
+    expect(createOrderSchema.safeParse({ plan: 'Annual' }).success).toBe(false)
+    expect(createOrderSchema.safeParse({ plan: 'Daily' }).success).toBe(false)
+  })
+
+  it('passes a well-formed referral code through', () => {
+    const parsed = createOrderSchema.safeParse({ plan: 'Lifetime', referralCode: 'JK-ABCD1234' })
+    expect(parsed.success).toBe(true)
+    if (parsed.success) expect(parsed.data.referralCode).toBe('JK-ABCD1234')
   })
 })
 

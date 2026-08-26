@@ -1,9 +1,10 @@
 // Pure classification for the payment reconciler — same fulfillment
 // discipline as the webhook (attribution, plan, currency, order-time price
 // pin), so a replayed payment can never fulfill on weaker terms.
-import type { PlanName } from './database.types'
+import type { FulfillablePlanName } from './database.types'
+import { FULFILLABLE_PLAN_NAMES } from './plans'
 
-const PLANS: readonly string[] = ['Weekly', 'Monthly', 'Quarterly', 'Annual']
+const PLANS: readonly string[] = FULFILLABLE_PLAN_NAMES
 
 export interface PaymentLike {
   id: string
@@ -17,7 +18,7 @@ export interface PaymentLike {
 
 export interface ReplayCandidate {
   p_user_id: string
-  p_plan: PlanName
+  p_plan: FulfillablePlanName
   p_amount: number // rupees
   p_payment_id: string
   p_order_id: string | null
@@ -70,7 +71,7 @@ export function classifyPayments(payments: PaymentLike[]): ClassifyResult {
 
     toProcess.push({
       p_user_id: userId,
-      p_plan: plan as PlanName,
+      p_plan: plan as FulfillablePlanName,
       p_amount: p.amount / 100,
       p_payment_id: p.id,
       p_order_id: p.order_id ?? null,

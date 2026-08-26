@@ -4,7 +4,12 @@
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
-export type PlanName = 'Weekly' | 'Monthly' | 'Quarterly' | 'Annual'
+/** Plans currently offered for sale (pricing page + checkout validation). */
+export type PlanName = 'Weekly' | 'Monthly' | 'Lifetime'
+/** Retired plans that still exist in historical purchase rows and replays. */
+export type LegacyPlanName = 'Quarterly' | 'Annual'
+/** Every plan the DB CHECK constraints accept — webhook + reconciler set. */
+export type FulfillablePlanName = PlanName | LegacyPlanName
 export type UserRole = 'jobseeker' | 'operator'
 export type JobStatus = 'pending_review' | 'approved' | 'rejected'
 export type CommissionStatus = 'none' | 'pending' | 'available' | 'withdrawn' | 'voided'
@@ -16,7 +21,7 @@ export type ProfileRow = {
   full_name: string | null
   role: UserRole
   referral_code: string
-  premium_plan: PlanName | null
+  premium_plan: FulfillablePlanName | null
   premium_expires_at: string | null
   bank_holder_name: string | null
   bank_account_number: string | null
@@ -53,7 +58,7 @@ export type JobListingRow = {
 export type PremiumPurchaseRow = {
   id: string
   user_id: string
-  plan: PlanName
+  plan: FulfillablePlanName
   amount: number
   payment_id: string
   order_id: string | null
@@ -99,6 +104,10 @@ export type SiteSettingsRow = {
   price_monthly: number
   price_quarterly: number
   price_annual: number
+  price_lifetime: number
+  mrp_weekly: number
+  mrp_monthly: number
+  mrp_lifetime: number
   commission_tiers: Record<PlanName, number>
   withdraw_threshold: number
   job_ttl_days: number
@@ -115,7 +124,7 @@ export type OperatorProfile = {
   full_name: string | null
   role: UserRole
   referral_code: string
-  premium_plan: PlanName | null
+  premium_plan: FulfillablePlanName | null
   premium_expires_at: string | null
   created_at: string
 }

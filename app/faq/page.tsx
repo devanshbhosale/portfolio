@@ -28,12 +28,12 @@ const faqs: FaqItem[] = [
   {
     question: 'How much do premium plans cost?',
     answer:
-      'Weekly is ₹99, Monthly is ₹199, Quarterly is ₹499, and Annual is ₹1,499. You can compare every plan and its perks on the Premium Plans page.',
+      'Weekly is ₹99, Monthly is ₹199, and Lifetime is ₹999 (one-time, never expires). You can compare every plan on the Premium Plans page.',
   },
   {
     question: 'How does the referral program work?',
     answer:
-      'Every account gets a unique referral code, shown in your Referral Dashboard. When someone signs up and buys a premium plan using your code, you earn a commission: 20% on Weekly and Monthly plans, and 25% on Quarterly and Annual plans.',
+      'Every account gets a unique referral code, shown in your Referral Dashboard. When someone signs up and buys a premium plan using your code, you earn a commission: 20% on Weekly and Monthly plans, and 25% on the Lifetime plan.',
   },
   {
     question: 'When can I withdraw my referral earnings?',

@@ -43,10 +43,21 @@ describe('classifyPayments', () => {
   })
 
   it('unknown plan / wrong currency / bad price pin / amount mismatch are skipped', () => {
-    expect(classifyPayments([pay({ notes: { userId: 'u1', plan: 'Lifetime', orderAmount: '19900' } })]).skipped[0].reason).toBe('unknown_plan')
+    // 'Daily' was never a plan. Legacy 'Quarterly'/'Annual' must NOT be here —
+    // they stay fulfillable so pre-change captures can replay.
+    expect(classifyPayments([pay({ notes: { userId: 'u1', plan: 'Daily', orderAmount: '19900' } })]).skipped[0].reason).toBe('unknown_plan')
     expect(classifyPayments([pay({ currency: 'USD' })]).skipped[0].reason).toBe('unexpected_currency')
     expect(classifyPayments([pay({ notes: { userId: 'u1', plan: 'Monthly' } })]).skipped[0].reason).toBe('missing_price_pin')
     expect(classifyPayments([pay({ amount: 9900 })]).skipped[0].reason).toBe('amount_mismatch_vs_pin')
+  })
+
+  it('retired legacy plans still classify as processable (replay safety)', () => {
+    const [q] = classifyPayments([pay({ amount: 49900, notes: { userId: 'u1', plan: 'Quarterly', orderAmount: '49900' } })]).toProcess
+    expect(q.p_plan).toBe('Quarterly')
+    const [a] = classifyPayments([pay({ amount: 149900, notes: { userId: 'u1', plan: 'Annual', orderAmount: '149900' } })]).toProcess
+    expect(a.p_plan).toBe('Annual')
+    const [lt] = classifyPayments([pay({ amount: 99900, notes: { userId: 'u1', plan: 'Lifetime', orderAmount: '99900' } })]).toProcess
+    expect(lt.p_plan).toBe('Lifetime')
   })
 
   it('referralCode absent → null, order_id absent → null', () => {

@@ -28,13 +28,13 @@ const sections: Section[] = [
   {
     heading: '3. Subscriptions and refunds',
     paragraphs: [
-      'Premium plans (Weekly, Monthly, Quarterly, and Annual) unlock the apply flow for premium listings and their associated perks for the duration of the plan. Because access is granted instantly, payments are non-refundable except where legally required. If you believe you were charged incorrectly, contact us and we will review it.',
+      'Premium plans (Weekly, Monthly, and Lifetime) unlock the apply flow for premium listings and their associated perks for the duration of the plan. Because access is granted instantly, payments are non-refundable except where legally required. If you believe you were charged incorrectly, contact us and we will review it.',
     ],
   },
   {
     heading: '4. Referral rewards',
     paragraphs: [
-      'Every account receives a referral code. When a new user purchases a premium plan using your code, you earn a commission — 20% on Weekly and Monthly plans, and 25% on Quarterly and Annual plans. Commissions can be withdrawn once your lifetime earnings cross ₹500.',
+      'Every account receives a referral code. When a new user purchases a premium plan using your code, you earn a commission — 20% on Weekly and Monthly plans, and 25% on the Lifetime plan. Commissions can be withdrawn once your lifetime earnings cross ₹500.',
       'Self-referrals, fake accounts, and any other abuse of the referral program will result in forfeiture of all rewards and may lead to account termination.',
     ],
   },

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { adminClient } from '@/lib/server'
-import { PLAN_NAMES } from '@/lib/plans'
+import { FULFILLABLE_PLAN_NAMES } from '@/lib/plans'
 
 interface WebhookPayment {
   id: string
@@ -58,7 +58,9 @@ export async function POST(req: Request) {
         console.error(`[webhook] payment ${payment.id} captured without userId/plan notes`)
         return NextResponse.json({ error: 'Missing attribution, retrying' }, { status: 500 })
       }
-      const planName = PLAN_NAMES.find((n) => n === plan)
+      // Fulfillable, not offered: a pre-change Quarterly/Annual capture must
+      // still fulfill here instead of 500-retrying forever.
+      const planName = FULFILLABLE_PLAN_NAMES.find((n) => n === plan)
       if (!planName) {
         console.error(`[webhook] payment ${payment.id} has unknown plan: ${plan}`)
         return NextResponse.json({ error: 'Unknown plan, retrying' }, { status: 500 })

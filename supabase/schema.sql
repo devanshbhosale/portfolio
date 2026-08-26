@@ -19,7 +19,7 @@ create table public.profiles (
   role text not null default 'jobseeker'
     check (role in ('jobseeker', 'operator')),
   referral_code text unique not null,
-  premium_plan text check (premium_plan in ('Weekly', 'Monthly', 'Quarterly', 'Annual')),
+  premium_plan text check (premium_plan in ('Weekly', 'Monthly', 'Quarterly', 'Annual', 'Lifetime')),
   premium_expires_at timestamptz,           -- premium = premium_expires_at > now()
   bank_holder_name text,
   bank_account_number text,
@@ -65,7 +65,7 @@ create unique index job_listings_source_pending_idx
 create table public.premium_purchases (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id),
-  plan text not null check (plan in ('Weekly', 'Monthly', 'Quarterly', 'Annual')),
+  plan text not null check (plan in ('Weekly', 'Monthly', 'Quarterly', 'Annual', 'Lifetime')),
   amount numeric not null check (amount >= 0),          -- rupees
   payment_id text unique not null,                      -- Razorpay idempotency anchor
   order_id text,
@@ -115,9 +115,13 @@ create table public.site_settings (
   id int primary key default 1 check (id = 1),
   price_weekly int not null default 9900,      -- paise
   price_monthly int not null default 19900,
-  price_quarterly int not null default 49900,
-  price_annual int not null default 149900,
-  commission_tiers jsonb not null default '{"Weekly":0.2,"Monthly":0.2,"Quarterly":0.25,"Annual":0.25}',
+  price_quarterly int not null default 49900,  -- legacy: no longer offered, kept for replays
+  price_annual int not null default 149900,    -- legacy: no longer offered, kept for replays
+  price_lifetime int not null default 99900,
+  mrp_weekly int not null default 19900,       -- display-only strike-through prices
+  mrp_monthly int not null default 39900,      -- (dashboard-editable, never used in the money path)
+  mrp_lifetime int not null default 499900,
+  commission_tiers jsonb not null default '{"Weekly":0.2,"Monthly":0.2,"Lifetime":0.25,"Quarterly":0.25,"Annual":0.25}',
   withdraw_threshold numeric not null default 500,  -- rupees; owner-only (SQL editor)
   job_ttl_days int not null default 30,
   featured_days int not null default 7,
@@ -127,6 +131,22 @@ create table public.site_settings (
 
 -- Idempotent for existing databases (column added 2026-08-22).
 alter table public.site_settings add column if not exists premium_ratio numeric not null default 0.35;
+
+-- Idempotent 2026-08-26: Lifetime plan price + dashboard-editable MRP display
+-- prices (fresh installs get them from the create-table defaults above).
+alter table public.site_settings
+  add column if not exists price_lifetime int not null default 99900,
+  add column if not exists mrp_weekly int not null default 19900,
+  add column if not exists mrp_monthly int not null default 39900,
+  add column if not exists mrp_lifetime int not null default 499900;
+-- Idempotent 2026-08-26: accept 'Lifetime' in plan CHECKs on databases that
+-- predate it (Quarterly/Annual kept — legacy buyers + payment replays).
+alter table public.profiles drop constraint if exists profiles_premium_plan_check;
+alter table public.profiles add constraint profiles_premium_plan_check
+  check (premium_plan::text in ('Weekly', 'Monthly', 'Quarterly', 'Annual', 'Lifetime'));
+alter table public.premium_purchases drop constraint if exists premium_purchases_plan_check;
+alter table public.premium_purchases add constraint premium_purchases_plan_check
+  check (plan::text in ('Weekly', 'Monthly', 'Quarterly', 'Annual', 'Lifetime'));
 
 -- Live-sync sentinel: bumped by a trigger whenever job_listings changes.
 -- (2026-08-24: the website no longer holds a realtime socket on /jobs — it
@@ -379,10 +399,11 @@ begin
 
   select * into s from public.site_settings where id = 1;
   v_days := case p_plan
-    when 'Weekly' then 7 when 'Monthly' then 30
+    when 'Weekly' then 7 when 'Monthly' then 30 when 'Lifetime' then 36500
     when 'Quarterly' then 90 when 'Annual' then 365 else null end;
   v_expected := case p_plan
     when 'Weekly' then s.price_weekly when 'Monthly' then s.price_monthly
+    when 'Lifetime' then s.price_lifetime
     when 'Quarterly' then s.price_quarterly when 'Annual' then s.price_annual end / 100.0;
   if v_days is null then
     raise exception 'invalid plan: %', p_plan;
@@ -415,7 +436,13 @@ begin
     select * into v_referrer from public.profiles
     where referral_code = p_referral_code and id <> p_user_id;
     if v_referrer.id is not null then
-      v_tier := coalesce((s.commission_tiers ->> p_plan)::numeric, 0.2);
+      -- Missing-key fallback is plan-aware: retired Quarterly/Annual were sold
+      -- at 25%, so a dashboard save that drops their keys must not silently
+      -- re-price a legacy referral replay down to 20%.
+      v_tier := coalesce(
+        (s.commission_tiers ->> p_plan)::numeric,
+        case when p_plan in ('Quarterly', 'Annual') then 0.25 else 0.2 end
+      );
       update public.premium_purchases
       set referrer_user_id = v_referrer.id,
           commission_amount = round(p_amount * v_tier, 2),
@@ -880,9 +907,14 @@ end;
 $$;
 
 -- Desktop settings edit (operator). Deliberately OMITS withdraw_threshold —
--- that stays owner-only via the SQL editor.
-create or replace function public.update_site_settings_desktop(
-  p_price_weekly int, p_price_monthly int, p_price_quarterly int, p_price_annual int,
+-- that stays owner-only via the SQL editor. Quarterly/Annual prices are no
+-- longer operator-editable (plans retired); process_payment keeps its own
+-- legacy branches for replays.
+-- 2026-08-26: signature changed (lifetime + MRPs replace quarterly/annual).
+drop function if exists public.update_site_settings_desktop(int, int, int, int, jsonb, int, int);
+create function public.update_site_settings_desktop(
+  p_price_weekly int, p_price_monthly int, p_price_lifetime int,
+  p_mrp_weekly int, p_mrp_monthly int, p_mrp_lifetime int,
   p_commission_tiers jsonb, p_job_ttl_days int, p_featured_days int
 ) returns void language plpgsql security definer set search_path = public as $$
 begin
@@ -890,8 +922,10 @@ begin
   update public.site_settings
   set price_weekly = p_price_weekly,
       price_monthly = p_price_monthly,
-      price_quarterly = p_price_quarterly,
-      price_annual = p_price_annual,
+      price_lifetime = p_price_lifetime,
+      mrp_weekly = p_mrp_weekly,
+      mrp_monthly = p_mrp_monthly,
+      mrp_lifetime = p_mrp_lifetime,
       commission_tiers = p_commission_tiers,
       job_ttl_days = p_job_ttl_days,
       featured_days = p_featured_days,
@@ -957,8 +991,8 @@ revoke execute on function public.set_job_stale(uuid, boolean) from public, anon
 grant execute on function public.set_job_stale(uuid, boolean) to authenticated;
 revoke execute on function public.delete_job(uuid) from public, anon;
 grant execute on function public.delete_job(uuid) to authenticated;
-revoke execute on function public.update_site_settings_desktop(int, int, int, int, jsonb, int, int) from public, anon;
-grant execute on function public.update_site_settings_desktop(int, int, int, int, jsonb, int, int) to authenticated;
+revoke execute on function public.update_site_settings_desktop(int, int, int, int, int, int, jsonb, int, int) from public, anon;
+grant execute on function public.update_site_settings_desktop(int, int, int, int, int, int, jsonb, int, int) to authenticated;
 
 -- is_operator(): INTENTIONAL EXCEPTION — stays public. RLS policies invoke
 -- it as the querying role (including anon) and the desktop renderer checks

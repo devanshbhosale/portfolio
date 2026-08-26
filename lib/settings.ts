@@ -1,9 +1,10 @@
-import { DEFAULT_PRICES_PAISE, DEFAULT_COMMISSION_TIERS, DEFAULT_WITHDRAW_THRESHOLD, DEFAULT_JOB_TTL_DAYS, DEFAULT_FEATURED_DAYS } from './plans'
+import { DEFAULT_PRICES_PAISE, DEFAULT_MRPS_PAISE, DEFAULT_COMMISSION_TIERS, DEFAULT_WITHDRAW_THRESHOLD, DEFAULT_JOB_TTL_DAYS, DEFAULT_FEATURED_DAYS } from './plans'
 import type { PlanName, SiteSettingsRow } from './database.types'
 import { adminClient } from './server'
 
 export interface SiteSettings {
   prices: Record<PlanName, number>          // paise
+  mrps: Record<PlanName, number>            // paise; display-only strike-through
   commissionTiers: Record<PlanName, number> // fractions, e.g. 0.25
   withdrawThreshold: number                 // rupees
   jobTtlDays: number
@@ -12,6 +13,7 @@ export interface SiteSettings {
 
 const defaults = (): SiteSettings => ({
   prices: { ...DEFAULT_PRICES_PAISE },
+  mrps: { ...DEFAULT_MRPS_PAISE },
   commissionTiers: { ...DEFAULT_COMMISSION_TIERS },
   withdrawThreshold: DEFAULT_WITHDRAW_THRESHOLD,
   jobTtlDays: DEFAULT_JOB_TTL_DAYS,
@@ -26,14 +28,17 @@ function fromRow(row: SiteSettingsRow): SiteSettings {
       // otherwise create-order and the webhook use stale defaults.
       Weekly: row.price_weekly != null ? row.price_weekly : d.prices.Weekly,
       Monthly: row.price_monthly != null ? row.price_monthly : d.prices.Monthly,
-      Quarterly: row.price_quarterly != null ? row.price_quarterly : d.prices.Quarterly,
-      Annual: row.price_annual != null ? row.price_annual : d.prices.Annual,
+      Lifetime: row.price_lifetime != null ? row.price_lifetime : d.prices.Lifetime,
+    },
+    mrps: {
+      Weekly: row.mrp_weekly != null ? row.mrp_weekly : d.mrps.Weekly,
+      Monthly: row.mrp_monthly != null ? row.mrp_monthly : d.mrps.Monthly,
+      Lifetime: row.mrp_lifetime != null ? row.mrp_lifetime : d.mrps.Lifetime,
     },
     commissionTiers: {
       Weekly: Number(row.commission_tiers?.Weekly ?? d.commissionTiers.Weekly),
       Monthly: Number(row.commission_tiers?.Monthly ?? d.commissionTiers.Monthly),
-      Quarterly: Number(row.commission_tiers?.Quarterly ?? d.commissionTiers.Quarterly),
-      Annual: Number(row.commission_tiers?.Annual ?? d.commissionTiers.Annual),
+      Lifetime: Number(row.commission_tiers?.Lifetime ?? d.commissionTiers.Lifetime),
     },
     withdrawThreshold: row.withdraw_threshold != null ? Number(row.withdraw_threshold) : d.withdrawThreshold,
     jobTtlDays: row.job_ttl_days != null ? row.job_ttl_days : d.jobTtlDays,
