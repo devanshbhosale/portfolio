@@ -30,7 +30,7 @@ for (const path of ['/terms', '/privacy', '/faq', '/contact', '/opengraph-image'
 // 2) /api/jobs serves NO premium fields to an anonymous caller.
 try {
   const res = await fetch(`${SITE}/api/jobs`)
-  const body = (await res.json()) as { jobs?: Record<string, unknown>[] }
+  const body = await res.json()
   const jobs = body.jobs ?? []
   check('/api/jobs returns jobs', jobs.length > 0, `${jobs.length} rows`)
   const leaks = jobs.filter(
