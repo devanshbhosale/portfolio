@@ -19,6 +19,10 @@ const job = (over: Partial<PublicJob> = {}): PublicJob => ({
   apply_url: 'https://example.com/apply',
   created_at: '2026-08-01T00:00:00Z',
   approved_at: '2026-08-01T00:00:00Z',
+  salary_monthly_min: 18000,
+  salary_monthly_max: 22000,
+  exp_min_months: 0,
+  exp_max_months: 24,
   ...over,
 })
 

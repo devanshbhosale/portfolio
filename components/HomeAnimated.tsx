@@ -8,6 +8,7 @@ import { ArrowRight, ShieldCheck, Users, Gift } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import HeroParticles from '@/components/HeroParticles'
 import DecodeHeading from '@/components/DecodeHeading'
+import HomeSearch from '@/components/HomeSearch'
 
 export default function HomeAnimated() {
   return (
@@ -49,6 +50,13 @@ export default function HomeAnimated() {
               Browse Jobs <ArrowRight size={18} className="ml-2" aria-hidden />
             </Button>
             <Button href="/pricing" size="lg" variant="outline" className="cta-sweep">See Premium Plans</Button>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.6 }}
+          >
+            <HomeSearch />
           </motion.div>
         </div>
       </section>

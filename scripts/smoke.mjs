@@ -41,6 +41,36 @@ try {
   check('/api/jobs locked rows clean', false, String(e))
 }
 
+// 2b) Smart search: filtered query → 200 with facets; suggestion invariant
+// (a suggestion may only appear when total is 0).
+try {
+  const res = await fetch(
+    `${SITE}/api/jobs?q=driver&salary=under20k&exp=fresher&posted=7&sort=newest`,
+  )
+  const body = await res.json()
+  const f = body.facets
+  const facetsOk = f && Array.isArray(f.tags) && Array.isArray(f.locations)
+    && typeof f.experience === 'object' && typeof f.salary === 'object'
+  check('filtered /api/jobs → 200 with facets', res.status === 200 && facetsOk, `status ${res.status}`)
+  check('filtered /api/jobs reports total', typeof body.total === 'number', `total ${body.total}`)
+  check('suggestion only on zero-result queries', body.suggestion === undefined || body.total === 0)
+} catch (e) {
+  check('smart search checks', false, String(e))
+}
+
+// 2c) Garbage query → clean zero-result response, never a 5xx.
+try {
+  const res = await fetch(`${SITE}/api/jobs?q=zzqqxx12345nope`)
+  const body = await res.json()
+  check(
+    'garbage query → 200 with total 0',
+    res.status === 200 && body.total === 0 && Array.isArray(body.jobs) && body.jobs.length === 0,
+    `status ${res.status}, total ${body.total}`,
+  )
+} catch (e) {
+  check('garbage query → 200', false, String(e))
+}
+
 // 3) The REST backdoor stays shut: anon key must be DENIED on public_jobs.
 if (SB_URL && ANON) {
   try {

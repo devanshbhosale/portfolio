@@ -1,4 +1,4 @@
-// Hand-written mirror of supabase/schema.sql (v10). When the schema changes,
+// Hand-written mirror of supabase/schema.sql (v11). When the schema changes,
 // change both. (Regenerate with `supabase gen types typescript` once a
 // real project exists if drift appears.)
 
@@ -53,6 +53,12 @@ export type JobListingRow = {
   created_at: string
   approved_at: string | null
   approved_by: string | null
+  /** Facets parsed from salary_range/experience by the parse_job_facets
+   *  trigger. null = unparseable → matches every filter bucket. */
+  salary_monthly_min: number | null
+  salary_monthly_max: number | null
+  exp_min_months: number | null
+  exp_max_months: number | null
 }
 
 export type PremiumPurchaseRow = {
@@ -147,6 +153,10 @@ export type PublicJob = {
   apply_url: string | null
   created_at: string
   approved_at: string | null
+  salary_monthly_min: number | null
+  salary_monthly_max: number | null
+  exp_min_months: number | null
+  exp_max_months: number | null
 }
 
 export type Database = {
@@ -268,6 +278,24 @@ export type Database = {
     }
     Functions: {
       is_operator: { Args: Record<string, never>; Returns: boolean }
+      search_jobs: {
+        Args: {
+          p_q_tokens?: string[] | null
+          p_location_variants?: string[] | null
+          p_tag?: string | null
+          p_premium?: boolean | null
+          p_salary_min?: number | null
+          p_salary_max?: number | null
+          p_exp_min?: number | null
+          p_exp_max?: number | null
+          p_posted_days?: number | null
+          p_sort?: string | null
+          p_page?: number | null
+          p_page_size?: number | null
+        }
+        Returns: Json
+      }
+      suggest_job_query: { Args: { q: string }; Returns: string | null }
       delete_job: { Args: { p_id: string }; Returns: Json }
       process_payment: {
         Args: {

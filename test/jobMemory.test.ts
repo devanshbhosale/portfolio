@@ -71,6 +71,10 @@ const seoJob: PublicJob = {
   apply_url: null,
   created_at: '2026-08-18T07:51:42.782Z',
   approved_at: '2026-08-18T07:51:42.782Z',
+  salary_monthly_min: 18000,
+  salary_monthly_max: 22000,
+  exp_min_months: 0,
+  exp_max_months: 24,
 }
 
 describe('buildJobPostingLd (Google Jobs)', () => {
