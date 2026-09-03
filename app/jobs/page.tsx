@@ -14,6 +14,7 @@ import {
   type JobFilters, type Tier,
 } from '@/lib/jobsFilters'
 import { isTeaser, type ApiJob } from '@/lib/jobRedaction'
+import { rupees } from '@/lib/plans'
 import { PAGE_SIZE, type SearchFacets } from '@/lib/jobsQuery'
 import { savedSet, toggleSaved } from '@/lib/savedJobs'
 import type { PublicJob } from '@/lib/database.types'
@@ -74,6 +75,7 @@ export default function JobsPage() {
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [paywallOpen, setPaywallOpen] = useState(false)
+  const [unlockFrom, setUnlockFrom] = useState<number | null>(null)
   const [filters, setFilters] = useState<JobFilters>(DEFAULT_FILTERS)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [tags, setTags] = useState<string[]>([])
@@ -146,6 +148,16 @@ export default function JobsPage() {
       .order('tag')
       .then(({ data }) => {
         setTags(((data ?? []) as { tag: string }[]).map((r) => r.tag).filter(Boolean))
+      })
+    // Locked-card CTA price — one shot here; the focus/90s refetches don't need it.
+    // Unknown stays null → the card shows plain "Unlock" (never a wrong price).
+    fetch('/api/settings')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s: { prices?: { Weekly?: unknown } } | null) => {
+        if (typeof s?.prices?.Weekly === 'number') setUnlockFrom(Math.round(rupees(s.prices.Weekly)))
+      })
+      .catch(() => {
+        // leave null
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -456,7 +468,13 @@ export default function JobsPage() {
                       action={<SaveHeart jobId={job.id} onToggle={onHeartToggle} />}
                     />
                   ) : (
-                    <BlurredJobCard key={job.id} job={job} index={idx} onLockClick={() => setPaywallOpen(true)} />
+                    <BlurredJobCard
+                      key={job.id}
+                      job={job}
+                      index={idx}
+                      unlockFrom={unlockFrom ?? undefined}
+                      onLockClick={() => setPaywallOpen(true)}
+                    />
                   )
                 ))}
               </div>

@@ -1,9 +1,12 @@
 import Button from '@/components/ui/Button'
 import HomeAnimated from '@/components/HomeAnimated'
+import HeroParticles from '@/components/HeroParticles'
 import JobCard from '@/components/JobCard'
 import BlurredJobCard from '@/components/BlurredJobCard'
 import StatsCounter from '@/components/StatsCounter'
 import { adminClient, getAuthedProfile, isPremiumActive } from '@/lib/server'
+import { defaultSettings, getSiteSettings } from '@/lib/settings'
+import { rupees } from '@/lib/plans'
 import { isTeaser, redactJob } from '@/lib/jobRedaction'
 import type { PublicJob } from '@/lib/database.types'
 
@@ -32,11 +35,26 @@ export default async function LandingPage() {
   ])
   const stats = { activeJobs: all.count ?? 0, premiumJobs: premium.count ?? 0, freshJobs: fresh.count ?? 0 }
 
+  // Weekly (entry) plan price for the locked-card CTA; marketing page must
+  // not 500 on a transient DB blip (same trade as the pricing page).
+  let settings
+  try {
+    settings = await getSiteSettings()
+  } catch {
+    settings = defaultSettings()
+  }
+  const unlockFrom = Math.round(rupees(settings.prices.Weekly))
+
   const freeJobs = rows.filter((j): j is PublicJob => !j.is_premium).slice(0, 3)
   const premiumSample = rows.filter((j) => j.is_premium).slice(0, 3)
 
   return (
-    <div className="bg-white">
+    <div>
+      {/* Page-wide motion backdrop, landing route only (fixed host sizes the
+          canvas to the viewport; content paints above the -z-10 layer). */}
+      <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden>
+        <HeroParticles />
+      </div>
       <HomeAnimated />
 
       <section className="py-16">
@@ -51,7 +69,7 @@ export default async function LandingPage() {
             ))}
             {premiumSample.map((job, i) => (
               isTeaser(job)
-                ? <BlurredJobCard key={job.id} job={job} index={i} />
+                ? <BlurredJobCard key={job.id} job={job} index={i} unlockFrom={unlockFrom} />
                 : <JobCard key={job.id} job={job} index={i} isPremium />
             ))}
           </div>
@@ -61,7 +79,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="py-16 bg-primary-600 text-white">
+      <section className="py-16 bg-primary-600/85 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
             <StatsCounter value={stats.activeJobs} label="Active Jobs" />

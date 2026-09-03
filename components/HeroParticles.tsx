@@ -2,9 +2,9 @@
 // Ported from MengTo/threeui "constellation-field" family (particle-network
 // variant), MIT — https://github.com/MengTo/threeui
 // Follows the ThreeUI renderer lifecycle contract: ResizeObserver sizing with
-// DPR capped at 1.5, IntersectionObserver-gated animation frames (zero work
-// offscreen), pause on hidden tab, eased pointer parallax, full teardown,
-// and a static frame under prefers-reduced-motion.
+// DPR capped at 1.5, animation frames gated on hidden tab (the host is a
+// fixed viewport layer — always on-screen by design), eased window-level
+// pointer parallax, full teardown, and a static frame under reduced motion.
 
 import { useEffect, useRef } from 'react'
 
@@ -42,7 +42,6 @@ export default function HeroParticles({ className = '' }: { className?: string }
     let width = 0
     let height = 0
     let raf = 0
-    let visible = true
     let particles: Particle[] = []
     const mouse = { x: 0.5, y: 0.5 }
     const target = { x: 0.5, y: 0.5 }
@@ -90,7 +89,7 @@ export default function HeroParticles({ className = '' }: { className?: string }
         if (p.y > height + 8) p.y = -8
       }
       draw()
-      if (!visible || document.hidden) {
+      if (document.hidden) {
         raf = 0
         return
       }
@@ -98,13 +97,13 @@ export default function HeroParticles({ className = '' }: { className?: string }
     }
 
     const wake = () => {
-      if (raf === 0 && visible && !document.hidden && !reduced) {
+      if (raf === 0 && !document.hidden && !reduced) {
         raf = requestAnimationFrame(step)
       }
     }
 
     const sync = () => {
-      if (!visible || document.hidden) {
+      if (document.hidden) {
         if (raf) cancelAnimationFrame(raf)
         raf = 0
       } else {
@@ -131,38 +130,25 @@ export default function HeroParticles({ className = '' }: { className?: string }
     }
 
     const pointer = (event: PointerEvent) => {
-      const bounds = canvas.getBoundingClientRect()
-      target.x = (event.clientX - bounds.left) / Math.max(1, bounds.width)
-      target.y = (event.clientY - bounds.top) / Math.max(1, bounds.height)
+      target.x = event.clientX / Math.max(1, width)
+      target.y = event.clientY / Math.max(1, height)
     }
 
-    const pointerLeave = () => {
-      target.x = 0.5
-      target.y = 0.5
-    }
-
-    const intersection = new IntersectionObserver(([entry]) => {
-      visible = entry?.isIntersecting ?? true
-      sync()
-    })
     const resizeObserver = new ResizeObserver(resize)
 
     resizeObserver.observe(host)
-    intersection.observe(host)
     document.addEventListener('visibilitychange', sync)
     if (!reduced) {
-      canvas.addEventListener('pointermove', pointer, { passive: true })
-      canvas.addEventListener('pointerleave', pointerLeave, { passive: true })
+      window.addEventListener('pointermove', pointer, { passive: true })
     }
     resize()
+    wake()
 
     return () => {
       if (raf) cancelAnimationFrame(raf)
-      intersection.disconnect()
       resizeObserver.disconnect()
       document.removeEventListener('visibilitychange', sync)
-      canvas.removeEventListener('pointermove', pointer)
-      canvas.removeEventListener('pointerleave', pointerLeave)
+      window.removeEventListener('pointermove', pointer)
       particles = []
     }
   }, [])

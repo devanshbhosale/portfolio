@@ -6,16 +6,16 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, ShieldCheck, Users, Gift } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import HeroParticles from '@/components/HeroParticles'
 import DecodeHeading from '@/components/DecodeHeading'
 import HomeSearch from '@/components/HomeSearch'
 
 export default function HomeAnimated() {
   return (
     <>
+      {/* Particle canvas lives page-wide as a fixed -z-10 layer in
+          app/page.tsx — this gradient stays light (40%) so it shows through. */}
       <section className="relative overflow-hidden py-20 md:py-28">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-accent-50 opacity-70" />
-        <HeroParticles />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-accent-50 opacity-40" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
@@ -61,7 +61,7 @@ export default function HomeAnimated() {
         </div>
       </section>
 
-      <section className="py-16 bg-gray-50">
+      <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8">
             {[
