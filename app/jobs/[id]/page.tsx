@@ -5,6 +5,7 @@ import { MapPin, Briefcase, IndianRupee, Tag, ArrowLeft, Lock, Star, Phone } fro
 import Button from '@/components/ui/Button'
 import SaveHeart from '@/components/SaveHeart'
 import ApplyButton from '@/components/ApplyButton'
+import ReportListingButton from '@/components/ReportListingButton'
 import { adminClient, getAuthedProfile, isPremiumActive } from '@/lib/server'
 import { safeExternalUrl } from '@/lib/safe-url'
 import { buildJobPostingLd } from '@/lib/jobPosting'
@@ -125,15 +126,25 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
         <section className="mt-6 pt-6 border-t border-gray-100">
           {locked ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-center">
-              <Lock className="mx-auto text-amber-600 mb-2" size={24} aria-hidden />
-              <h2 className="font-semibold text-gray-900">This is a premium listing</h2>
-              <p className="mt-1 text-sm text-gray-600">Upgrade to see the full description details and direct HR contact.</p>
-              <Button href="/pricing" variant="accent" className="mt-4">View Premium Plans</Button>
+            <div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-center">
+                <Lock className="mx-auto text-amber-600 mb-2" size={24} aria-hidden />
+                <h2 className="font-semibold text-gray-900">This is a premium listing</h2>
+                <p className="mt-1 text-sm text-gray-600">Upgrade to see the full description details and direct HR contact.</p>
+                <Button href="/pricing" variant="accent" className="mt-4">View Premium Plans</Button>
+              </div>
+              <ReportListingButton jobId={job.id} jobTitle={job.title} />
             </div>
           ) : (
             <div>
-              {safeApplyUrl && <ApplyButton jobId={job.id} href={safeApplyUrl} />}
+              {safeApplyUrl && (
+                <>
+                  <ApplyButton jobId={job.id} href={safeApplyUrl} />
+                  <p className="mt-2 text-xs text-gray-500">
+                    Legitimate employers never ask for money. Jobkar charges only for platform access.
+                  </p>
+                </>
+              )}
               <h2 className="mt-6 text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <Phone size={18} className="text-primary-600" aria-hidden /> HR contact
               </h2>
@@ -152,6 +163,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                   View original posting ↗
                 </a>
               )}
+              <ReportListingButton jobId={job.id} jobTitle={job.title} />
             </div>
           )}
         </section>

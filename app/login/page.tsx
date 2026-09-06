@@ -99,6 +99,11 @@ function LoginForm() {
           New here?{' '}
           <Link href="/signup" className="font-medium text-primary-600 hover:text-primary-700">Create an account</Link>
         </p>
+        <p className="mt-2 text-center text-xs text-gray-500">
+          By logging in you agree to our{' '}
+          <Link href="/terms" className="underline hover:text-primary-600">Terms</Link> and{' '}
+          <Link href="/privacy" className="underline hover:text-primary-600">Privacy Policy</Link>.
+        </p>
         <p className="mt-6 text-center text-xs text-gray-400">
           Operator accounts (for managing listings) are created by the site owner — jobseeker signup is public.
         </p>

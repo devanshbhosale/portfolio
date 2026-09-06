@@ -5,6 +5,9 @@ import { withdrawalSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
 import type { WithdrawalRequestRow } from '@/lib/database.types'
 
+/** What the browser gets back: payment-side bank fields never leave the server. */
+type WithdrawalSummaryRow = Pick<WithdrawalRequestRow, 'id' | 'user_id' | 'amount' | 'status' | 'created_at' | 'processed_at'>
+
 export async function POST(req: Request) {
   const profile = await getAuthedProfile()
   if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -35,12 +38,14 @@ export async function GET() {
   const profile = await getAuthedProfile()
   if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Explicit safe columns — the bank number on file is payout data, never
+  // served back to the browser.
   const { data, error } = await createRouteClient()
     .from('withdrawal_requests')
-    .select('*')
+    .select('id, user_id, amount, status, created_at, processed_at')
     .eq('user_id', profile.id)
     .order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: 'Could not load withdrawals' }, { status: 500 })
 
-  return NextResponse.json(data satisfies WithdrawalRequestRow[])
+  return NextResponse.json(data satisfies WithdrawalSummaryRow[])
 }

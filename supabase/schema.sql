@@ -28,6 +28,9 @@ create table public.profiles (
   bank_account_number text,
   bank_ifsc text,
   bank_connected_at timestamptz,
+  pan_number text check (pan_number ~ '^[A-Z]{5}[0-9]{4}[A-Z]$'),
+  terms_accepted_at timestamptz,            -- stamped by handle_new_user from the signup checkbox
+  bank_last4 text,                          -- real mask source; browsers never read the full number
   created_at timestamptz default now()
 );
 
@@ -127,6 +130,16 @@ create table public.job_marks (
   unique (user_id, job_id)
 );
 
+-- Listing reports (report-this-listing / takedown pipeline, 2026-09-06).
+create table public.reports (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  job_id uuid not null references public.job_listings(id) on delete cascade,
+  reason text not null check (reason in ('fake_scam', 'expired', 'asks_for_money', 'discriminatory', 'other')),
+  note text,
+  created_at timestamptz not null default now()
+);
+
 -- Single-row site configuration.
 create table public.site_settings (
   id int primary key default 1 check (id = 1),
@@ -180,6 +193,8 @@ create index on public.premium_purchases (user_id);
 create index on public.premium_purchases (referrer_user_id);
 create index on public.withdrawal_requests (user_id, status);
 create index on public.job_marks (user_id);
+create index on public.reports (job_id);
+create index on public.reports (user_id);
 
 -- ─── Row Level Security ─────────────────────────────────────────────
 
@@ -190,6 +205,7 @@ alter table public.withdrawal_requests enable row level security;
 alter table public.site_settings     enable row level security;
 alter table public.jobs_version      enable row level security;
 alter table public.job_marks         enable row level security;
+alter table public.reports           enable row level security;
 
 -- Operator gate (security definer so policies/RPCs can read profiles).
 create or replace function public.is_operator()
@@ -235,6 +251,13 @@ create policy "job marks update own" on public.job_marks
   for update using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "job marks delete own" on public.job_marks
   for delete using (user_id = auth.uid());
+
+-- reports: users insert their own (jobseeker takedown pipeline); operators
+-- read for triage. Reporters never read back — no select-own policy.
+create policy "reports insert own" on public.reports
+  for insert with check (user_id = auth.uid());
+create policy "reports operator read" on public.reports
+  for select using (public.is_operator());
 
 -- site_settings: public read (pricing needs it); no operator write policy.
 create policy "settings public read" on public.site_settings
@@ -305,6 +328,11 @@ where status = 'approved'
 
 grant select on public.public_tags to anon, authenticated;
 
+-- reports: authenticated only (signed-out users get the mailto fallback in
+-- the UI). Supabase default privileges would grant anon too — revoked.
+grant select, insert on public.reports to authenticated;
+revoke all on public.reports from anon;
+
 -- ─── Signup trigger ─────────────────────────────────────────────────
 
 create or replace function public.handle_new_user()
@@ -317,8 +345,12 @@ begin
   while exists (select 1 from public.profiles where referral_code = v_code) loop
     v_code := 'JK-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
   end loop;
-  insert into public.profiles (id, email, full_name, referral_code)
-  values (new.id, new.email, new.raw_user_meta_data->>'full_name', v_code);
+  -- terms_accepted_at: the signup checkbox posts terms_accepted=true in the
+  -- signUp metadata; stamped here so consent exists even when email
+  -- confirmation means no session at signup time.
+  insert into public.profiles (id, email, full_name, referral_code, terms_accepted_at)
+  values (new.id, new.email, new.raw_user_meta_data->>'full_name', v_code,
+          case when coalesce(new.raw_user_meta_data->>'terms_accepted', '') = 'true' then now() else null end);
   return new;
 end;
 $$;
@@ -545,14 +577,18 @@ begin
 end;
 $$;
 
--- Bank details: the ONLY profile columns a user can write themselves.
+-- Bank details + PAN: the ONLY profile columns a user can write themselves.
+-- One overload only — never add a second update_own_profile variant, or
+-- PostgREST RPC resolution hits function ambiguity.
 create or replace function public.update_own_profile(
-  p_holder text, p_account text, p_ifsc text
+  p_holder text, p_account text, p_ifsc text, p_pan text default null
 ) returns void language sql security definer set search_path = public as $$
   update public.profiles
   set bank_holder_name = p_holder,
       bank_account_number = p_account,
       bank_ifsc = upper(p_ifsc),
+      bank_last4 = right(p_account, 4),
+      pan_number = upper(p_pan),
       bank_connected_at = now()
   where id = auth.uid();
 $$;
@@ -1213,8 +1249,8 @@ revoke execute on function public.rls_auto_enable() from public, anon, authentic
 drop function if exists public.rls_auto_enable();
 
 -- Jobseeker self-service: authenticated only (bodies are auth.uid()-scoped).
-revoke execute on function public.update_own_profile(text, text, text) from public, anon;
-grant execute on function public.update_own_profile(text, text, text) to authenticated;
+revoke execute on function public.update_own_profile(text, text, text, text) from public, anon;
+grant execute on function public.update_own_profile(text, text, text, text) to authenticated;
 revoke execute on function public.request_withdrawal(numeric) from public, anon;
 grant execute on function public.request_withdrawal(numeric) to authenticated;
 
@@ -1263,3 +1299,19 @@ begin
     alter publication supabase_realtime add table public.jobs_version;
   end if;
 end $$;
+
+-- ─── Profiles column-level grants (bank lock, applied live 2026-09-06) ──
+-- RLS gates rows, not columns: these grants make the raw bank columns
+-- unreadable by authenticated browsers. Safe set = what AuthContext selects
+-- + what operator_profiles exposes (security_invoker → runs as the caller).
+-- Service-role paths bypass grants, so payouts/review tools keep working.
+-- Applied from live-fixes/2026-09-06-bank-column-grants.sql AFTER the
+-- explicit-column-list code is deployed.
+
+revoke select on table public.profiles from authenticated;
+
+grant select (
+  id, email, full_name, role, referral_code, premium_plan,
+  premium_expires_at, bank_connected_at, bank_last4, pan_number,
+  terms_accepted_at, created_at
+) on table public.profiles to authenticated;

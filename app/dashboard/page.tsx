@@ -85,7 +85,7 @@ export default function ReferralDashboard() {
     .reduce((s, w) => s + w.amount, 0)
   const withdrawable = Math.max(0, available - pendingWithdrawTotal)
   const canWithdraw = withdrawable >= threshold && user.bankConnected
-  const maskedAccount = user.bankConnected ? `•••• ${'0000'}` : null
+  const maskedAccount = user.bankLast4 ? `•••• ${user.bankLast4}` : null
 
   const copyCode = async () => {
     try {
@@ -100,7 +100,7 @@ export default function ReferralDashboard() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-900">Your Referral Dashboard</h1>
-      <p className="mt-2 text-gray-600">Earn 20%+ commission on every premium plan purchased with your code.</p>
+      <p className="mt-2 text-gray-600">Earn 20%+ commission on every premium plan purchased with your code. Earnings depend on purchases made with your code — not guaranteed income.</p>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

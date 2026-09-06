@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { withdrawalSchema, bankConnectSchema, ifscSchema, accountNumberSchema, createOrderSchema } from '@/lib/validation'
+import { withdrawalSchema, bankConnectSchema, ifscSchema, accountNumberSchema, panSchema, reportSchema, createOrderSchema } from '@/lib/validation'
 
 describe('withdrawalSchema — request_withdrawal input', () => {
   it('accepts a positive amount and coerces numeric strings', () => {
@@ -33,16 +33,36 @@ describe('bank account validation (used for settlement)', () => {
     expect(anyOfFails(['12345678', '1234567890123456789', '12345678a'])).toBe(true)
   })
 
-  it('bankConnect passes only when all 3 fields are valid', () => {
-    expect(
-      bankConnectSchema.safeParse({ holderName: 'Ram Kumar', accountNumber: '123456789012', ifsc: 'HDFC0001234' }).success,
-    ).toBe(true)
-    expect(
-      bankConnectSchema.safeParse({ holderName: 'R', accountNumber: '123456789012', ifsc: 'HDFC0001234' }).success,
-    ).toBe(false)
-    expect(
-      bankConnectSchema.safeParse({ holderName: 'Ram Kumar', accountNumber: '12345678', ifsc: 'HDFC0001234' }).success,
-    ).toBe(false)
+  it('bankConnect passes only when all 4 fields are valid (PAN required)', () => {
+    const base = { holderName: 'Ram Kumar', accountNumber: '123456789012', ifsc: 'HDFC0001234' }
+    expect(bankConnectSchema.safeParse({ ...base, pan: 'ABCDE1234F' }).success).toBe(true)
+    // PAN is required — omitted or blank fails.
+    expect(bankConnectSchema.safeParse(base).success).toBe(false)
+    expect(bankConnectSchema.safeParse({ ...base, pan: '' }).success).toBe(false)
+    expect(bankConnectSchema.safeParse({ holderName: 'R', accountNumber: '123456789012', ifsc: 'HDFC0001234', pan: 'ABCDE1234F' }).success).toBe(false)
+    expect(bankConnectSchema.safeParse({ holderName: 'Ram Kumar', accountNumber: '12345678', ifsc: 'HDFC0001234', pan: 'ABCDE1234F' }).success).toBe(false)
+  })
+
+  it('PAN must be 5 letters, 4 digits, 1 letter', () => {
+    expect(panSchema.safeParse('ABCDE1234F').success).toBe(true)
+    for (const bad of ['ABCDE1234', 'abcde1234f', 'ABCDe1234F', 'ABCD1234EFG', ''])
+      expect(panSchema.safeParse(bad).success).toBe(false)
+  })
+})
+
+describe('reportSchema — listing reports', () => {
+  const jobId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+
+  it('accepts a valid report with and without a note', () => {
+    expect(reportSchema.safeParse({ jobId, reason: 'fake_scam' }).success).toBe(true)
+    expect(reportSchema.safeParse({ jobId, reason: 'other', note: 'looks off' }).success).toBe(true)
+  })
+
+  it('rejects unknown reasons, bad ids, and long notes', () => {
+    expect(reportSchema.safeParse({ jobId, reason: 'spam' }).success).toBe(false)
+    expect(reportSchema.safeParse({ jobId: 'not-a-uuid', reason: 'fake_scam' }).success).toBe(false)
+    expect(reportSchema.safeParse({ jobId, reason: 'fake_scam', note: 'x'.repeat(501) }).success).toBe(false)
+    expect(reportSchema.safeParse({ reason: 'fake_scam' }).success).toBe(false)
   })
 })
 

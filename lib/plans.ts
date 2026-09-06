@@ -66,10 +66,10 @@ export const PLAN_BILLING_NOTES: Record<PlanName, string> = {
 /** Shared perks rendered once under all three cards ("Everything included"). */
 export const SHARED_FEATURES = [
   'Access to hidden jobs not on LinkedIn',
-  'Know real salaries before applying',
+  'Salary details where employers share them',
   'Advanced filters & smart search',
-  'Unlimited saved jobs & job alerts',
-  'Early access before everyone else',
+  'Unlimited saved jobs across devices',
+  'Early access to new listings',
   'Direct apply links, no middlemen',
   'Priority support',
 ] as const

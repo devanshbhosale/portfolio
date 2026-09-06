@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Check, Crown, ShieldCheck, RefreshCcw, Zap } from 'lucide-react'
@@ -194,7 +195,7 @@ export default function PricingPlans({
             transition={{ delay: 0.1 }}
             className="mt-4 mx-auto max-w-2xl text-lg text-gray-600"
           >
-            Upgrade once and unlock every premium listing — hidden jobs, real salaries and direct apply links.
+            Upgrade once and unlock every premium listing — hidden jobs, salary details where employers share them, and direct apply links.
           </motion.p>
           <motion.p
             initial={{ opacity: 0 }}
@@ -267,6 +268,13 @@ export default function PricingPlans({
         <p className="mt-10 text-center text-sm text-gray-500">
           Browsing Jobkar is always free. A subscription unlocks the details behind premium listings — apply links,
           salary data and HR contacts.
+        </p>
+        <p className="mt-6 mx-auto max-w-3xl text-center text-sm text-gray-500">
+          Premium access is delivered instantly. We review refund requests within 48 hours and refund within
+          5–7 working days to your original payment method for: a wrong or duplicate charge, a payment where
+          premium access was never unlocked, or a technical defect that prevents access you paid for. To raise one,
+          email jobkarsupport@gmail.com or visit our{' '}
+          <Link href="/grievance" className="font-medium text-primary-600 hover:text-primary-700 underline">grievance page</Link>.
         </p>
       </section>
 

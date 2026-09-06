@@ -23,7 +23,7 @@ const faqs: FaqItem[] = [
   {
     question: 'What does a premium plan unlock?',
     answer:
-      'Premium unlocks the apply button and contact details for premium listings (the ones marked with a crown), plus perks that grow with the plan — like weekly job alerts, resume review, and early access to new jobs. Free listings always stay free to apply to.',
+      'Premium unlocks the apply button and contact details for premium listings (the ones marked with a crown), plus advanced filters and early access to new jobs. Free listings always stay free to apply to.',
   },
   {
     question: 'How much do premium plans cost?',
@@ -33,7 +33,7 @@ const faqs: FaqItem[] = [
   {
     question: 'How does the referral program work?',
     answer:
-      'Every account gets a unique referral code, shown in your Referral Dashboard. When someone signs up and buys a premium plan using your code, you earn a commission: 20% on Weekly and Monthly plans, and 25% on the Lifetime plan.',
+      'Every account gets a unique referral code, shown in your Referral Dashboard. When someone signs up and buys a premium plan using your code, you earn a commission: 20% on Weekly and Monthly plans, and 25% on the Lifetime plan. Earnings depend on purchases made with your code — they are not guaranteed income.',
   },
   {
     question: 'When can I withdraw my referral earnings?',
@@ -48,7 +48,7 @@ const faqs: FaqItem[] = [
   {
     question: 'Are refunds available?',
     answer:
-      'Premium access is granted the moment your payment succeeds, so payments are non-refundable except where legally required. If you were charged incorrectly or something went wrong with your payment, email jobkarsupport@gmail.com and we will review it.',
+      'Premium access is delivered instantly, but we do refund: a wrong or duplicate charge, a payment where premium access was never unlocked, or a technical defect that prevents access you paid for. Requests are reviewed within 48 hours and refunded within 5–7 working days to your original payment method. Email jobkarsupport@gmail.com or use our grievance page.',
   },
   {
     question: 'Where do the job listings come from?',
@@ -63,7 +63,17 @@ const faqs: FaqItem[] = [
   {
     question: 'How do I delete my account or my data?',
     answer:
-      'Email jobkarsupport@gmail.com from your registered address and we will remove your account and personal data from our systems.',
+      'Email jobkarsupport@gmail.com from your registered address and we will remove your account and personal data from our systems. We respond within 30 days.',
+  },
+  {
+    question: 'Do I pay to apply for jobs?',
+    answer:
+      'No. The premium fee covers access to platform features — never a job application. Applying to any job is free once you can see its details, and legitimate employers never ask candidates for money.',
+  },
+  {
+    question: 'Is Jobkar legitimate?',
+    answer:
+      'Yes. Jobkar charges for platform access only — never for job applications — and every listing is reviewed by our team before going live. You can see exactly who operates the service and how to raise a complaint on our grievance page.',
   },
 ]
 

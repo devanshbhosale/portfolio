@@ -19,7 +19,8 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
   const [holderName, setHolderName] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
   const [ifsc, setIfsc] = useState('')
-  const [errors, setErrors] = useState<{ holder?: string; account?: string; ifsc?: string }>({})
+  const [pan, setPan] = useState('')
+  const [errors, setErrors] = useState<{ holder?: string; account?: string; ifsc?: string; pan?: string }>({})
   const [busy, setBusy] = useState(false)
 
   const handleConnect = async () => {
@@ -27,6 +28,7 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
       holderName: holderName.trim(),
       accountNumber: accountNumber.trim(),
       ifsc: ifsc.trim().toUpperCase(),
+      pan: pan.trim().toUpperCase(),
     })
     if (!parsed.success) {
       const issues = parsed.error.issues
@@ -38,13 +40,14 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
       setErrors(fieldErrors)
       return
     }
-    const { holderName: h, accountNumber: a, ifsc: i } = parsed.data
+    const { holderName: h, accountNumber: a, ifsc: i, pan: p } = parsed.data
     setErrors({})
     setBusy(true)
     const { error } = await supabase.rpc('update_own_profile', {
       p_holder: h,
       p_account: a,
       p_ifsc: i,
+      p_pan: p,
     })
     setBusy(false)
 
@@ -87,7 +90,7 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
               <h3 className="text-xl font-bold text-gray-900">Connect Bank Account</h3>
               <p className="text-sm text-gray-500 mt-1">Enter your bank details for withdrawals.</p>
               <p className="mt-1 text-xs text-gray-500">
-                Used only to send your payouts — never shared.{' '}
+                Used only to send your payouts and for tax reporting — never shared.{' '}
                 <Link href="/privacy" className="underline hover:text-primary-600">Privacy Policy</Link>
               </p>
             </div>
@@ -131,6 +134,21 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
                   autoComplete="off"
                 />
                 {errors.ifsc && <p role="alert" className="mt-1 text-sm text-red-600">{errors.ifsc}</p>}
+              </div>
+              <div>
+                <label htmlFor="bank-pan" className="block text-sm font-medium text-gray-700">PAN</label>
+                <input
+                  id="bank-pan"
+                  type="text"
+                  value={pan}
+                  onChange={(e) => setPan(e.target.value.toUpperCase())}
+                  maxLength={10}
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+                  placeholder="ABCDE1234F"
+                  autoComplete="off"
+                />
+                <p className="mt-1 text-xs text-gray-500">Required by law for tax deduction on your payouts.</p>
+                {errors.pan && <p role="alert" className="mt-1 text-sm text-red-600">{errors.pan}</p>}
               </div>
             </div>
             <Button fullWidth variant="primary" className="mt-6" onClick={handleConnect} disabled={busy}>

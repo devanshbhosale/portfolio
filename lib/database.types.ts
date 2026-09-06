@@ -27,6 +27,9 @@ export type ProfileRow = {
   bank_account_number: string | null
   bank_ifsc: string | null
   bank_connected_at: string | null
+  pan_number: string | null
+  terms_accepted_at: string | null
+  bank_last4: string | null
   created_at: string
 }
 
@@ -102,6 +105,17 @@ export type JobMarkRow = {
   applied: boolean
   created_at: string
   updated_at: string
+}
+
+export type ReportReason = 'fake_scam' | 'expired' | 'asks_for_money' | 'discriminatory' | 'other'
+
+export type ReportRow = {
+  id: string
+  user_id: string
+  job_id: string
+  reason: ReportReason
+  note: string | null
+  created_at: string
 }
 
 export type SiteSettingsRow = {
@@ -270,6 +284,27 @@ export type Database = {
         Update: Partial<Omit<JobMarkRow, 'id' | 'created_at' | 'user_id' | 'job_id'>>
         Relationships: []
       }
+      reports: {
+        Row: ReportRow
+        Insert: Omit<ReportRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
+        Update: Partial<Omit<ReportRow, 'id' | 'created_at' | 'user_id' | 'job_id'>>
+        Relationships: [
+          {
+            foreignKeyName: 'reports_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'reports_job_id_fkey'
+            columns: ['job_id']
+            isOneToOne: false
+            referencedRelation: 'job_listings'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {
       public_jobs: { Row: PublicJob; Relationships: [] }
@@ -309,7 +344,7 @@ export type Database = {
         }
         Returns: Json
       }
-      update_own_profile: { Args: { p_holder: string; p_account: string; p_ifsc: string }; Returns: undefined }
+      update_own_profile: { Args: { p_holder: string; p_account: string; p_ifsc: string; p_pan?: string }; Returns: undefined }
       release_commissions: { Args: Record<string, never>; Returns: number }
       approve_withdrawal: { Args: { p_id: string }; Returns: Json }
       reject_withdrawal: { Args: { p_id: string; p_note: string }; Returns: Json }

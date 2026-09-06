@@ -38,7 +38,7 @@ export default function HomeAnimated() {
             transition={{ delay: 0.2, duration: 0.6 }}
             className="mt-6 text-lg md:text-xl text-gray-600 max-w-2xl mx-auto"
           >
-            Jobkar brings fresh blue‑collar job listings with salary details upfront — browse free and apply directly. Refer friends and earn 20%+ when they go premium.
+            Jobkar brings fresh blue‑collar job listings with salary details where employers share them — browse free and apply directly. Refer friends and earn when they go premium.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -66,7 +66,7 @@ export default function HomeAnimated() {
           <div className="grid md:grid-cols-3 gap-8">
             {[
               { icon: ShieldCheck, title: 'Verified Listings', desc: 'Every job is reviewed and approved by our team before going live.' },
-              { icon: Gift, title: 'Referral Rewards', desc: 'Earn 20%+ of every premium purchase made with your code.' },
+              { icon: Gift, title: 'Referral Rewards', desc: 'Earn 20%+ of every premium purchase made with your code. Earnings depend on purchases — not guaranteed income.' },
               { icon: Users, title: 'Fresh Listings', desc: 'New opportunities added regularly, so there is always something new.' },
             ].map((feature, i) => (
               <motion.div

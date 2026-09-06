@@ -6,7 +6,6 @@ import type { PlanName } from '@/lib/database.types'
 export interface PlanCard {
   name: PlanName
   price: number        // rupees
-  mrp: number          // rupees; display-only strike-through
   tagline: string
   billingNote: string
 }
@@ -20,7 +19,6 @@ interface PricingCardProps {
 }
 
 export default function PricingCard({ plan, badge, highlighted = false, onSelect, busy = false }: PricingCardProps) {
-  const savingsPct = plan.mrp > plan.price ? Math.round((1 - plan.price / plan.mrp) * 100) : null
   return (
     <motion.div
       whileHover={{ y: -6 }}
@@ -40,15 +38,10 @@ export default function PricingCard({ plan, badge, highlighted = false, onSelect
       <h3 className="text-lg font-bold text-navy-700">{plan.name}</h3>
       <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="text-5xl font-extrabold text-gray-900">₹{plan.price.toLocaleString('en-IN')}</span>
-        {savingsPct != null && (
-          <span className="text-sm text-gray-400 line-through">₹{plan.mrp.toLocaleString('en-IN')}</span>
-        )}
       </div>
-      {savingsPct != null && (
-        <span className="mt-2 inline-flex w-fit items-center rounded-full bg-navy-50 px-3 py-0.5 text-xs font-semibold text-navy-700">
-          Save {savingsPct}%
-        </span>
-      )}
+      <span className="mt-2 inline-flex w-fit items-center rounded-full bg-navy-50 px-3 py-0.5 text-xs font-semibold text-navy-700">
+        Launch price — increases as Jobkar grows
+      </span>
       <p className="mt-4 text-sm font-medium text-primary-600">{plan.billingNote}</p>
       <p className="mt-1 text-sm text-gray-500">{plan.tagline}</p>
       <Button fullWidth variant={highlighted ? 'accent' : 'outline'} onClick={onSelect} disabled={busy} className="mt-8">

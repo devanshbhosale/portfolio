@@ -14,6 +14,7 @@ export interface AuthUser {
   premium: boolean
   premiumExpiresAt: string | null
   bankConnected: boolean
+  bankLast4: string | null
 }
 
 interface AuthResult {
@@ -28,14 +29,21 @@ interface AuthContextType {
   user: AuthUser | null
   authLoading: boolean
   login: (email: string, password: string) => Promise<AuthResult>
-  signUp: (email: string, password: string, fullName: string) => Promise<SignUpResult>
+  signUp: (email: string, password: string, fullName: string, termsAccepted: boolean) => Promise<SignUpResult>
   logout: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-function toAuthUser(session: Session, profile: ProfileRow): AuthUser {
+/** What the browser fetches of a profile — the safe-column subset (must stay
+ *  a subset of the column-level SELECT grant; raw bank_* are never fetched). */
+type SafeProfileRow = Pick<
+  ProfileRow,
+  'id' | 'email' | 'full_name' | 'role' | 'referral_code' | 'premium_plan' | 'premium_expires_at' | 'bank_connected_at' | 'bank_last4' | 'pan_number' | 'terms_accepted_at' | 'created_at'
+>
+
+function toAuthUser(session: Session, profile: SafeProfileRow): AuthUser {
   return {
     id: session.user.id,
     name: profile.full_name || profile.email.split('@')[0],
@@ -46,7 +54,8 @@ function toAuthUser(session: Session, profile: ProfileRow): AuthUser {
       ? new Date(profile.premium_expires_at).getTime() > Date.now()
       : false,
     premiumExpiresAt: profile.premium_expires_at,
-    bankConnected: Boolean(profile.bank_connected_at && profile.bank_account_number),
+    bankConnected: Boolean(profile.bank_connected_at && profile.bank_last4),
+    bankLast4: profile.bank_last4 ?? null,
   }
 }
 
@@ -58,9 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (session: Session) => {
     // Retry once: the signup trigger can land a beat after the first login.
     for (let attempt = 0; attempt < 2; attempt++) {
+      // Explicit safe columns — raw bank_* columns are never fetched into a
+      // browser (and after the column grants land, they are not even readable).
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, email, full_name, role, referral_code, premium_plan, premium_expires_at, bank_connected_at, bank_last4, pan_number, terms_accepted_at, created_at')
         .eq('id', session.user.id)
         .single()
       if (!error && profile) {
@@ -107,11 +118,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null }
   }, [])
 
-  const signUp = useCallback(async (email: string, password: string, fullName: string): Promise<SignUpResult> => {
+  const signUp = useCallback(async (email: string, password: string, fullName: string, termsAccepted: boolean): Promise<SignUpResult> => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } }, // handle_new_user trigger reads this
+      // handle_new_user trigger reads both: profile name + the 18+/terms
+      // checkbox tick, which becomes profiles.terms_accepted_at.
+      options: { data: { full_name: fullName, terms_accepted: termsAccepted } },
     })
     return {
       error: error?.message ?? null,

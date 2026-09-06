@@ -17,11 +17,24 @@ export const verifyPaymentSchema = z.object({
 
 export const ifscSchema = z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'IFSC must look like HDFC0001234')
 export const accountNumberSchema = z.string().regex(/^\d{9,18}$/, 'Account number must be 9-18 digits')
+export const panSchema = z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, 'PAN must look like ABCDE1234F')
 
 export const bankConnectSchema = z.object({
   holderName: z.string().trim().min(2).max(120),
   accountNumber: accountNumberSchema,
   ifsc: ifscSchema,
+  pan: panSchema,
+})
+
+export const REPORT_REASONS = ['fake_scam', 'expired', 'asks_for_money', 'discriminatory', 'other'] as const
+
+export const reportSchema = z.object({
+  jobId: z.string().regex(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    'Invalid job id',
+  ),
+  reason: z.enum(REPORT_REASONS),
+  note: z.string().trim().max(500).optional(),
 })
 
 export const withdrawalSchema = z.object({

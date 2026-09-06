@@ -39,7 +39,6 @@ export default async function PricingPage() {
   const plans: PlanCard[] = PLAN_NAMES.map((name) => ({
     name,
     price: rupees(settings.prices[name]),
-    mrp: rupees(settings.mrps[name]),
     tagline: PLAN_TAGLINES[name],
     billingNote: PLAN_BILLING_NOTES[name],
   }))

@@ -68,6 +68,10 @@ export default function ContactPage() {
           Read the FAQ
         </Link>
         {' · '}
+        <Link href="/grievance" className="font-semibold text-primary-600 hover:text-primary-700">
+          Grievance redressal
+        </Link>
+        {' · '}
         <Link href="/terms" className="font-semibold text-primary-600 hover:text-primary-700">
           Terms
         </Link>

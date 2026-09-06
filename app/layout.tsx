@@ -13,7 +13,7 @@ const poppins = Poppins({ subsets: ['latin'], weight: ['600', '700', '800'], var
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jobkarbe.vercel.app'
 const TITLE = 'Jobkar — Find Verified Jobs Near You'
 const DESCRIPTION =
-  'Verified blue-collar job listings across India with salary details upfront. Browse free and apply directly.'
+  'Verified blue-collar job listings across India. Browse free and apply directly.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

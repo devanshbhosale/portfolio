@@ -14,46 +14,64 @@ interface Section {
 
 const sections: Section[] = [
   {
-    heading: '1. Using Jobkar',
+    heading: '1. Who operates Jobkar',
     paragraphs: [
-      'You agree to use Jobkar lawfully and solely to search and apply for jobs for yourself. You may not scrape or resell data from the site, share your premium access with others, or attempt to work around the paywall. Violating these rules may result in termination of your account.',
+      'Jobkar is owned and operated by operatorOP, of Mumbai, Maharashtra, India. These terms form an agreement between you and operatorOP, and apply to your use of the website and every purchase made on it.',
     ],
   },
   {
-    heading: '2. Accounts',
+    heading: '2. Using Jobkar',
+    paragraphs: [
+      'You agree to use Jobkar lawfully and solely to search and apply for jobs for yourself. You may not scrape or resell data from the site, share your premium access with others, or attempt to work around the paywall. Violating these rules may result in termination of your account.',
+      'You must be 18 or older to use Jobkar. Accounts of users under 18 are terminated on discovery.',
+    ],
+  },
+  {
+    heading: '3. Accounts',
     paragraphs: [
       'You are responsible for keeping your login credentials secure and for all activity that happens on your account. If you suspect unauthorized access to your account, report it to us immediately at jobkarsupport@gmail.com.',
     ],
   },
   {
-    heading: '3. Subscriptions and refunds',
+    heading: '4. Subscriptions and refunds',
     paragraphs: [
-      'Premium plans (Weekly, Monthly, and Lifetime) unlock the apply flow for premium listings and their associated perks for the duration of the plan. Because access is granted instantly, payments are non-refundable except where legally required. If you believe you were charged incorrectly, contact us and we will review it.',
+      'Premium plans (Weekly, Monthly, and Lifetime) unlock the apply flow for premium listings and their associated perks for the duration of the plan. Weekly and Monthly grants last 7 and 30 days. Lifetime grants access for as long as Jobkar operates the service.',
+      'Jobkar charges for platform access. You never pay to apply for a job — legitimate employers never ask candidates for money.',
+      'Because access is granted instantly, we refund: a wrong or duplicate charge, a payment where premium access was never unlocked, or a technical defect that prevents access you paid for. Refund requests are reviewed within 48 hours and paid within 5–7 working days to your original payment method.',
     ],
   },
   {
-    heading: '4. Referral rewards',
+    heading: '5. Referral rewards',
     paragraphs: [
-      'Every account receives a referral code. When a new user purchases a premium plan using your code, you earn a commission — 20% on Weekly and Monthly plans, and 25% on the Lifetime plan. Commissions can be withdrawn once your lifetime earnings cross ₹500.',
+      'Every account receives a referral code. When a new user purchases a premium plan using your code, you earn a commission — 20% on Weekly and Monthly plans, and 25% on the Lifetime plan. Commissions can be withdrawn once your lifetime earnings cross ₹500. Earnings depend on purchases made with your code and are not guaranteed income.',
+      'Commissions are your income; taxes on them are your responsibility. Payouts require the bank details and PAN you provide in the bank-connect form, which are used solely to send your earnings.',
       'Self-referrals, fake accounts, and any other abuse of the referral program will result in forfeiture of all rewards and may lead to account termination.',
     ],
   },
   {
-    heading: '5. Job content',
+    heading: '6. Job content',
     paragraphs: [
       'Job listings on Jobkar are aggregated from publicly available company career pages and public job boards. We do not guarantee the accuracy, availability, or status of any listing — always verify a role on the official company site before applying. Jobkar is not the employer for any role displayed on the site.',
+      'If a listing looks wrong — a scam, expired, asking for money, or discriminatory — use the Report this listing control on the job page or email jobkarsupport@gmail.com. We review reports and act on valid ones within 36 hours.',
     ],
   },
   {
-    heading: '6. Liability',
+    heading: '7. Liability',
     paragraphs: [
       'The service is provided on an \u201cas is\u201d basis. To the maximum extent permitted by law, Jobkar is not liable for any indirect or consequential damages arising from your use of the site.',
+      'Nothing in these terms limits your rights under the Consumer Protection Act, 2019 or any other right that cannot lawfully be excluded.',
     ],
   },
   {
-    heading: '7. Changes',
+    heading: '8. Changes',
     paragraphs: [
       'We may update these terms from time to time. Material changes will be communicated by email or an on-site notice. Continuing to use Jobkar after a change means you accept the updated terms.',
+    ],
+  },
+  {
+    heading: '9. Governing law',
+    paragraphs: [
+      'These terms are governed by the laws of India. Courts at Mumbai, Maharashtra have exclusive jurisdiction over any dispute arising from your use of Jobkar.',
     ],
   },
 ]
@@ -61,7 +79,7 @@ const sections: Section[] = [
 export default function TermsPage() {
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-      <PageHeader title="Terms of Service" subtitle="Last updated: August 2026" />
+      <PageHeader title="Terms of Service" subtitle="Last updated: September 2026" />
 
       <div className="mt-10 space-y-8">
         {sections.map((section) => (
@@ -83,6 +101,10 @@ export default function TermsPage() {
           className="font-semibold text-primary-600 hover:text-primary-700"
         >
           jobkarsupport@gmail.com
+        </a>
+        {' '}or visit the{' '}
+        <a href="/grievance" className="font-semibold text-primary-600 hover:text-primary-700">
+          grievance page
         </a>
         .
       </p>

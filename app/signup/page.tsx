@@ -13,6 +13,7 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [agreed, setAgreed] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [needsConfirmation, setNeedsConfirmation] = useState(false)
@@ -28,8 +29,12 @@ export default function SignupPage() {
       setError('Password must be at least 8 characters.')
       return
     }
+    if (!agreed) {
+      setError('Please confirm you are 18 or older and accept the terms.')
+      return
+    }
     setBusy(true)
-    const result = await signUp(email.trim(), password, fullName.trim())
+    const result = await signUp(email.trim(), password, fullName.trim(), agreed)
     setBusy(false)
     if (result.error) {
       setError(result.error)
@@ -90,6 +95,21 @@ export default function SignupPage() {
               placeholder="At least 8 characters"
             />
             {error && <p role="alert" className="mt-2 text-sm text-red-600">{error}</p>}
+          </div>
+          <div className="flex items-start gap-2">
+            <input
+              id="agree"
+              type="checkbox"
+              required
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-1 w-4 h-4 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-2 focus:ring-primary-500"
+            />
+            <label htmlFor="agree" className="text-sm text-gray-600">
+              I am 18 or older and I agree to the{' '}
+              <Link href="/terms" className="font-medium text-primary-600 hover:text-primary-700 underline">Terms</Link> and the{' '}
+              <Link href="/privacy" className="font-medium text-primary-600 hover:text-primary-700 underline">Privacy Policy</Link>.
+            </label>
           </div>
           <Button type="submit" fullWidth disabled={busy || authLoading}>
             {busy ? 'Creating account…' : 'Sign up'}

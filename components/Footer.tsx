@@ -26,6 +26,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link href="/contact" className="hover:text-white">Contact Us</Link></li>
               <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
+              <li><Link href="/grievance" className="hover:text-white">Grievance</Link></li>
               <li><Link href="/terms" className="hover:text-white">Terms</Link></li>
               <li><Link href="/privacy" className="hover:text-white">Privacy</Link></li>
             </ul>
@@ -42,7 +43,10 @@ export default function Footer() {
           </div>
         </div>
         <div className="border-t border-navy-900 mt-8 pt-6 text-center text-sm">
-          © {new Date().getFullYear()} Jobkar. All rights reserved.
+          <p>
+            Operated by operatorOP, Mumbai, Maharashtra · jobkarsupport@gmail.com
+          </p>
+          <p className="mt-2">© {new Date().getFullYear()} Jobkar. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -18,7 +18,7 @@ const check = (name, ok, detail = '') => {
 }
 
 // 1) Trust/SEO surfaces respond.
-for (const path of ['/terms', '/privacy', '/faq', '/contact', '/opengraph-image', '/api/jobs']) {
+for (const path of ['/terms', '/privacy', '/faq', '/contact', '/grievance', '/opengraph-image', '/api/jobs']) {
   try {
     const res = await fetch(`${SITE}${path}`)
     check(`GET ${path} → 200`, res.status === 200, `status ${res.status}`)
@@ -26,6 +26,24 @@ for (const path of ['/terms', '/privacy', '/faq', '/contact', '/opengraph-image'
     check(`GET ${path} → 200`, false, String(e))
   }
 }
+
+// 1b) Compliance copy is live where it must be.
+async function checkContains(path, needle, name) {
+  try {
+    const res = await fetch(`${SITE}${path}`)
+    const html = await res.text()
+    check(name, res.status === 200 && html.includes(needle), `status ${res.status}`)
+  } catch (e) {
+    check(name, false, String(e))
+  }
+}
+await checkContains('/pricing', 'Launch price', '/pricing shows the launch-price badge')
+await checkContains('/pricing', 'reviewed within 48 hours', '/pricing shows the refund ladder')
+await checkContains('/signup', 'I am 18 or older', '/signup has the 18+/consent checkbox')
+await checkContains('/terms', 'operatorOP', '/terms names the operator')
+await checkContains('/terms', 'Mumbai', '/terms carries governing-law venue')
+await checkContains('/privacy', 'IFSC', '/privacy discloses bank-data collection')
+await checkContains('/grievance', '48 hours', '/grievance carries the acknowledgement SLA')
 
 // 2) /api/jobs serves NO premium fields to an anonymous caller.
 try {
@@ -71,6 +89,26 @@ try {
   check('garbage query → 200', false, String(e))
 }
 
+// 1c) Report-this-listing control is present on job detail pages (SSR).
+try {
+  const res = await fetch(`${SITE}/api/jobs`)
+  const body = await res.json()
+  const first = body.jobs?.find((j) => !j.is_premium) ?? body.jobs?.[0]
+  if (first?.id) {
+    const detail = await fetch(`${SITE}/jobs/${first.id}`)
+    const html = await detail.text()
+    check(
+      '/jobs/[id] shows the Report this listing control',
+      detail.status === 200 && html.includes('Report this listing'),
+      `status ${detail.status}`,
+    )
+  } else {
+    check('/jobs/[id] shows the Report this listing control', false, 'no job to test')
+  }
+} catch (e) {
+  check('/jobs/[id] report control', false, String(e))
+}
+
 // 3) The REST backdoor stays shut: anon key must be DENIED on public_jobs.
 if (SB_URL && ANON) {
   try {
@@ -83,6 +121,18 @@ if (SB_URL && ANON) {
   }
 } else {
   console.log('SKIP  anon REST check (SUPABASE_URL / SUPABASE_ANON_KEY not set)')
+}
+
+// 3b) Anon is also denied on reports (signed-out users get the mailto fallback).
+if (SB_URL && ANON) {
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/reports?select=id&limit=1`, {
+      headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
+    })
+    check('anon REST /reports denied', res.status === 401 || res.status === 403, `status ${res.status}`)
+  } catch (e) {
+    check('anon REST /reports denied', false, String(e))
+  }
 }
 
 console.log(failed === 0 ? '\nAll smoke checks passed.' : `\n${failed} smoke check(s) FAILED.`)
