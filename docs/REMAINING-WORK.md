@@ -1,14 +1,19 @@
 # Compliance Build — Remaining Work
 
-> Status snapshot saved 2026-09-07. The compliance build (plan:
-> docs/COMPLIANCE-PLAN.md) is **code-complete, reviewed, tested, and
-> committed locally** — NOT yet deployed. This file is the execution list for
-> a fresh session. Verify state first (step 0), then execute in order.
+> **EXECUTED COMPLETE — 2026-09-07** (this list is now historical). All steps ran in
+> order: push + smoke all-pass, bank column grants applied after the explicit-column
+> build was live (grants lock verified: dashboard loads, `bank_account_number` 403
+> for user JWTs), bank-fix E2E with a real login (dashboard shows the real `••••
+> 9012`, not the fake `•••• 0000`), report row + consent trigger verified end-to-end
+> on prod (test artifacts deleted after). Same-session addition: the withdraw
+> minimum became **₹500** (`f90b1e8` + `8462e32` + the site_settings row) — this
+> surfaced and fixed a latent bug where supabase-js fetches were frozen in
+> Vercel's deploy-persistent Data Cache. Health probe post-deploy: zero 5xx.
 >
-> Live-site status during this window: production runs `88e7a31` (the last
-> pushed commit — pre-compliance). The live **database** already carries ALL
-> the new schema (see step 0) — the site and DB are intentionally out of sync
-> until step 1.
+> Original status snapshot (saved 2026-09-07, pre-execution) follows. The
+> compliance build (plan: docs/COMPLIANCE-PLAN.md) was **code-complete,
+> reviewed, tested, and committed locally** — not yet deployed. Fresh-session
+> state check (step 0) passed, then steps 1–5 executed.
 
 ## State at save time
 

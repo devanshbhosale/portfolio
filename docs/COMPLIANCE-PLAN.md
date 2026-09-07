@@ -1,13 +1,19 @@
 # Jobkar Compliance Build Plan
 
-> Status: **SAVED — not yet executing.** Build starts only on the explicit "build this plan" command.
+> Status: **BUILD COMPLETE & DEPLOYED — 2026-09-07.** Commits `baf1911` + `41249e3`
+> pushed (`7ee79b8` was already on top), followed by the ₹500 withdraw-threshold change
+> (`f90b1e8` force-dynamic on /api/settings + `8462e32` no-store fetch on all server-side
+> Supabase clients + the DB row). Bank column grants applied to the live DB and verified
+> behaviorally (dashboard loads; raw bank columns 403 for user JWTs). Consent trigger and
+> reports RLS insert-own verified end-to-end on prod; test artifacts (report row, consent
+> account) deleted after verification. Remaining deferred items live in docs/compliance-triggers.md.
+>
 > Basis: the trimmed 12-point plan approved 2026-09-06, refined with exact file:line facts from an
 > Explore agent pass, plus three user decisions: **MRP → launch-price relabel**,
 > **identity details supplied at build time**, **bank fix → full fix** (real mask + browser can
 > never read the full account number).
 >
-> Pending from user at build time: **operator name, city/state, optional public phone** — the
-> footer block, Terms, and grievance page render them verbatim. No other decisions remain.
+> Operator identity as built: **operatorOP / Mumbai, Maharashtra** (user-set 2026-09-06).
 
 ---
 
