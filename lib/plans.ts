@@ -67,9 +67,8 @@ export const PLAN_BILLING_NOTES: Record<PlanName, string> = {
 export const SHARED_FEATURES = [
   'Access to hidden jobs not on LinkedIn',
   'Salary details where employers share them',
-  'Advanced filters & smart search',
+  'Advanced search across every listing',
   'Unlimited saved jobs across devices',
-  'Early access to new listings',
   'Direct apply links, no middlemen',
   'Priority support',
 ] as const

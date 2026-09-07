@@ -23,7 +23,7 @@ const faqs: FaqItem[] = [
   {
     question: 'What does a premium plan unlock?',
     answer:
-      'Premium unlocks the apply button and contact details for premium listings (the ones marked with a crown), plus advanced filters and early access to new jobs. Free listings always stay free to apply to.',
+      'Premium unlocks the apply button and contact details for premium listings (the ones marked with a crown) — including direct HR contacts, salary details where employers share them, and the full description. Free listings always stay free to apply to.',
   },
   {
     question: 'How much do premium plans cost?',

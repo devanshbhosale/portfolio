@@ -23,7 +23,7 @@ const sections: Section[] = [
   {
     heading: '2. How we use your data',
     paragraphs: [
-      'Your information powers the core service: surfacing relevant job listings, sending alerts you have opted into, processing premium plan payments (handled securely by Razorpay), running the referral rewards program including bank payouts, and providing customer support. We do not sell your personal information to third parties.',
+      'Your information powers the core service: surfacing relevant job listings, processing premium plan payments (handled securely by Razorpay), running the referral rewards program including bank payouts, and providing customer support. We do not sell your personal information to third parties.',
     ],
   },
   {

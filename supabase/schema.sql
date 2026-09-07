@@ -136,7 +136,7 @@ create table public.reports (
   user_id uuid not null references public.profiles(id) on delete cascade,
   job_id uuid not null references public.job_listings(id) on delete cascade,
   reason text not null check (reason in ('fake_scam', 'expired', 'asks_for_money', 'discriminatory', 'other')),
-  note text,
+  note text check (char_length(note) <= 500),
   created_at timestamptz not null default now()
 );
 
@@ -579,7 +579,8 @@ $$;
 
 -- Bank details + PAN: the ONLY profile columns a user can write themselves.
 -- One overload only — never add a second update_own_profile variant, or
--- PostgREST RPC resolution hits function ambiguity.
+-- PostgREST RPC resolution hits function ambiguity. PAN uses coalesce so a
+-- stale 3-arg call (old bundle / rollback) can never wipe a stored PAN.
 create or replace function public.update_own_profile(
   p_holder text, p_account text, p_ifsc text, p_pan text default null
 ) returns void language sql security definer set search_path = public as $$
@@ -588,7 +589,7 @@ create or replace function public.update_own_profile(
       bank_account_number = p_account,
       bank_ifsc = upper(p_ifsc),
       bank_last4 = right(p_account, 4),
-      pan_number = upper(p_pan),
+      pan_number = coalesce(upper(p_pan), pan_number),
       bank_connected_at = now()
   where id = auth.uid();
 $$;

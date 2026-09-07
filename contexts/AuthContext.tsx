@@ -43,7 +43,8 @@ type SafeProfileRow = Pick<
   'id' | 'email' | 'full_name' | 'role' | 'referral_code' | 'premium_plan' | 'premium_expires_at' | 'bank_connected_at' | 'bank_last4' | 'pan_number' | 'terms_accepted_at' | 'created_at'
 >
 
-function toAuthUser(session: Session, profile: SafeProfileRow): AuthUser {
+/** Exported for the safe-column invariant test — not for app use. */
+export function toAuthUser(session: Session, profile: SafeProfileRow): AuthUser {
   return {
     id: session.user.id,
     name: profile.full_name || profile.email.split('@')[0],

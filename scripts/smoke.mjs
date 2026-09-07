@@ -38,7 +38,7 @@ async function checkContains(path, needle, name) {
   }
 }
 await checkContains('/pricing', 'Launch price', '/pricing shows the launch-price badge')
-await checkContains('/pricing', 'reviewed within 48 hours', '/pricing shows the refund ladder')
+await checkContains('/pricing', 'review refund requests within 48 hours', '/pricing shows the refund ladder')
 await checkContains('/signup', 'I am 18 or older', '/signup has the 18+/consent checkbox')
 await checkContains('/terms', 'operatorOP', '/terms names the operator')
 await checkContains('/terms', 'Mumbai', '/terms carries governing-law venue')

@@ -163,7 +163,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                   View original posting ↗
                 </a>
               )}
-              <ReportListingButton jobId={job.id} jobTitle={job.title} />
+              <ReportListingButton jobId={job.id} jobTitle={teaser ? `${teaser.title_prefix}…` : job.title} />
             </div>
           )}
         </section>

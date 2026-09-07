@@ -10,7 +10,7 @@ import WithdrawalModal from '@/components/WithdrawalModal'
 import { supabase } from '@/lib/supabase'
 import { availableCommission, holdingCommission, lifetimeCommission } from '@/lib/money'
 import { DEFAULT_WITHDRAW_THRESHOLD } from '@/lib/plans'
-import type { PremiumPurchaseRow, WithdrawalRequestRow } from '@/lib/database.types'
+import type { PremiumPurchaseRow, WithdrawalSummaryRow } from '@/lib/database.types'
 
 const STATUS_STYLES: Record<string, string> = {
   holding: 'bg-amber-100 text-amber-800',
@@ -34,7 +34,7 @@ export default function ReferralDashboard() {
   const { toast } = useToast()
 
   const [purchases, setPurchases] = useState<PremiumPurchaseRow[] | null>(null)
-  const [withdrawals, setWithdrawals] = useState<WithdrawalRequestRow[]>([])
+  const [withdrawals, setWithdrawals] = useState<WithdrawalSummaryRow[]>([])
   const [threshold, setThreshold] = useState(DEFAULT_WITHDRAW_THRESHOLD)
   const [copied, setCopied] = useState(false)
   const [bankModalOpen, setBankModalOpen] = useState(false)
@@ -51,7 +51,7 @@ export default function ReferralDashboard() {
 
     try {
       const res = await fetch('/api/withdrawals')
-      if (res.ok) setWithdrawals((await res.json()) as WithdrawalRequestRow[])
+      if (res.ok) setWithdrawals((await res.json()) as WithdrawalSummaryRow[])
     } catch {
       // withdrawals list stays empty on failure; the page still works
     }

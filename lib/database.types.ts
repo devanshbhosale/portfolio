@@ -97,6 +97,12 @@ export type WithdrawalRequestRow = {
   reversed_by: string | null
 }
 
+/** Browser-facing withdrawal record — the bank fields stay server-side. */
+export type WithdrawalSummaryRow = Pick<
+  WithdrawalRequestRow,
+  'id' | 'user_id' | 'amount' | 'status' | 'created_at' | 'processed_at'
+>
+
 export type JobMarkRow = {
   id: string
   user_id: string

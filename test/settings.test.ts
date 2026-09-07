@@ -72,4 +72,13 @@ describe('settingsFromRow — settings drive the money path', () => {
     expect(s.commissionTiers.Weekly).toBe(0.1)
     expect(s.commissionTiers.Lifetime).toBe(0.3)
   })
+
+  it('the public settings shape can drop mrps cleanly', () => {
+    // The /api/settings route strips mrps before serving; the settingsFromRow
+    // output must destructure apart without the invented prices surviving.
+    const { mrps, ...publicSettings } = settingsFromRow(row())
+    expect(mrps.Weekly).toBeGreaterThan(0)
+    expect('mrps' in publicSettings).toBe(false)
+    expect(publicSettings.prices.Weekly).toBeGreaterThan(0)
+  })
 })

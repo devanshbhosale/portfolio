@@ -41,6 +41,8 @@ $$;
 
 -- 3. update_own_profile: also records PAN + last4. One overload only — the
 --    legacy 3-arg version was dropped so PostgREST can never hit ambiguity.
+--    PAN uses coalesce so a stale 3-arg call (old bundle / rollback) can
+--    never wipe a stored PAN.
 drop function if exists public.update_own_profile(text, text, text);
 create or replace function public.update_own_profile(
   p_holder text, p_account text, p_ifsc text, p_pan text default null
@@ -50,13 +52,19 @@ create or replace function public.update_own_profile(
       bank_account_number = p_account,
       bank_ifsc = upper(p_ifsc),
       bank_last4 = right(p_account, 4),
-      pan_number = upper(p_pan),
+      pan_number = coalesce(upper(p_pan), pan_number),
       bank_connected_at = now()
   where id = auth.uid();
 $$;
 
 revoke execute on function public.update_own_profile(text, text, text, text) from public, anon;
 grant  execute on function public.update_own_profile(text, text, text, text) to authenticated;
+
+-- 3b. Backfill last4 for pre-migration bank connections (covers the window
+--     between this migration and the deploy of the bankLast4-aware UI).
+update public.profiles
+set bank_last4 = right(bank_account_number, 4)
+where bank_account_number is not null and bank_last4 is null;
 
 -- 4. reports: users insert their own (RLS insert-own, job_marks precedent);
 --    operators read for triage. Reporters never read back.
@@ -65,7 +73,7 @@ create table if not exists public.reports (
   user_id uuid not null references public.profiles(id) on delete cascade,
   job_id uuid not null references public.job_listings(id) on delete cascade,
   reason text not null check (reason in ('fake_scam', 'expired', 'asks_for_money', 'discriminatory', 'other')),
-  note text,
+  note text check (char_length(note) <= 500),
   created_at timestamptz not null default now()
 );
 

@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getSiteSettings } from '@/lib/settings'
 
-/** Public pricing/config subset (used by the pricing page). */
+/** Public pricing/config subset (used by the pricing page). mrps are
+ *  intentionally omitted — invented display prices are no longer served
+ *  anywhere, not even this endpoint. */
 export async function GET() {
   const settings = await getSiteSettings()
-  return NextResponse.json(settings)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- stripping the invented display prices from the wire
+  const { mrps, ...publicSettings } = settings
+  void mrps
+  return NextResponse.json(publicSettings)
 }

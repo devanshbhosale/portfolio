@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import type { Session } from '@supabase/supabase-js'
-import type { ProfileRow } from '@/lib/database.types'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-// toAuthUser is not exported (module-internal by design); the invariant it
-// must hold is mirrored here: the AuthUser shape carries bankLast4, never
-// the full account number. The check runs against the REAL function via a
-// dynamic import of the compiled module's default export surface — simplest
-// honest version: re-derive from the source contract via ProfileRow keys.
+// toAuthUser lives in a 'use client' JSX module that vitest (node env, no
+// JSX transform) cannot import — so the mapper invariant is enforced against
+// the source itself: the mapping must derive bankConnected from bank_last4
+// and never from bank_account_number, and the AuthUser shape carries
+// bankLast4. The select-list/grant-set equality is asserted literally.
 
 const SAFE_COLUMNS = [
   'id', 'email', 'full_name', 'role', 'referral_code', 'premium_plan',
@@ -14,12 +14,11 @@ const SAFE_COLUMNS = [
   'terms_accepted_at', 'created_at',
 ] as const
 
+const authSrc = () => readFileSync(resolve('contexts/AuthContext.tsx'), 'utf8')
+
 describe('profiles browser-safe column set', () => {
-  it('contains every column AuthContext selects (grants must match code)', async () => {
-    const { readFileSync } = await import('node:fs')
-    const { resolve } = await import('node:path')
-    const src = readFileSync(resolve('contexts/AuthContext.tsx'), 'utf8')
-    const m = src.match(/\.select\('([^']+)'\)/)
+  it('contains every column AuthContext selects (grants must match code)', () => {
+    const m = authSrc().match(/\.select\('([^']+)'\)/)
     expect(m).not.toBeNull()
     const selected = m![1].split(',').map((s) => s.trim())
     expect(selected.sort()).toEqual([...SAFE_COLUMNS].sort())
@@ -32,27 +31,24 @@ describe('profiles browser-safe column set', () => {
     }
   })
 
-  it('bankConnected derives from last4, not the full number', () => {
-    const profile = {
-      id: 'u1', email: 'a@b.c', full_name: 'A', role: 'jobseeker' as const,
-      referral_code: 'JK-AAAAAAAA', premium_plan: null, premium_expires_at: null,
-      bank_holder_name: null, bank_account_number: null, bank_ifsc: null,
-      bank_connected_at: new Date().toISOString(), pan_number: null,
-      terms_accepted_at: null, bank_last4: '1234', created_at: new Date().toISOString(),
-    } satisfies ProfileRow
-    // The same expression toAuthUser uses.
-    const bankConnected = Boolean(profile.bank_connected_at && profile.bank_last4)
-    expect(bankConnected).toBe(true)
-    // And the AuthUser type never had a field for the full number (compile-
-    // time guarantee; this asserts the mask source instead).
-    expect(profile.bank_last4).toBe('1234')
+  it('toAuthUser derives bankConnected from bank_last4 (source-invariant)', () => {
+    const src = authSrc()
+    expect(src).toContain('bankConnected: Boolean(profile.bank_connected_at && profile.bank_last4)')
+    expect(src).toContain('bankLast4: profile.bank_last4 ?? null')
+    // The mapper must not read the raw number anywhere.
+    expect(src).not.toContain('profile.bank_account_number')
   })
 
-  it('withdrawal history exposes no bank number to the browser', async () => {
-    const { readFileSync } = await import('node:fs')
-    const { resolve } = await import('node:path')
+  it('withdrawal history exposes no bank number to the browser', () => {
     const src = readFileSync(resolve('app/api/withdrawals/route.ts'), 'utf8')
     expect(src).not.toMatch(/select\('\*'\)/)
     expect(src).not.toContain('bank_account_number')
+  })
+
+  it('the public settings response strips mrps — invented prices are never served', () => {
+    const src = readFileSync(resolve('app/api/settings/route.ts'), 'utf8')
+    expect(src).toMatch(/mrps/)
+    expect(src).toMatch(/void mrps/)
+    expect(src).toMatch(/NextResponse\.json\(publicSettings\)/)
   })
 })

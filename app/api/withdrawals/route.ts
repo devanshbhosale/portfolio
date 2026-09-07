@@ -3,10 +3,7 @@ import { createRouteClient, getAuthedProfile, readJson } from '@/lib/server'
 // Session client: the operator read policy lets operators read all rows, jobseekers their own.
 import { withdrawalSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
-import type { WithdrawalRequestRow } from '@/lib/database.types'
-
-/** What the browser gets back: payment-side bank fields never leave the server. */
-type WithdrawalSummaryRow = Pick<WithdrawalRequestRow, 'id' | 'user_id' | 'amount' | 'status' | 'created_at' | 'processed_at'>
+import type { WithdrawalSummaryRow } from '@/lib/database.types'
 
 export async function POST(req: Request) {
   const profile = await getAuthedProfile()

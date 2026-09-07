@@ -23,7 +23,12 @@ export async function POST(req: Request) {
     reason: parsed.data.reason,
     note: parsed.data.note ?? null,
   })
-  if (error) return NextResponse.json({ error: 'Could not submit report' }, { status: 500 })
+  if (error) {
+    // Surface server-side: a misapplied RLS policy or revoked grant would
+    // otherwise fail silently while the user retries forever.
+    console.error('report insert failed', { userId: profile.id, jobId: parsed.data.jobId, error })
+    return NextResponse.json({ error: 'Could not submit report' }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }
