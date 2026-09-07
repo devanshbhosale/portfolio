@@ -2,6 +2,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import type { Database } from '@/lib/database.types'
 
+// Same Data-Cache rationale as lib/server.ts: auth session fetches must
+// never be served from Next's persistent server-side fetch cache.
+const noStoreFetch: typeof fetch = (input, init) =>
+  fetch(input, { ...init, cache: 'no-store' })
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -11,6 +16,7 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: noStoreFetch },
       cookies: {
         getAll() {
           return request.cookies.getAll()
