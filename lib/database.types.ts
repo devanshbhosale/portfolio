@@ -14,6 +14,7 @@ export type UserRole = 'jobseeker' | 'operator'
 export type JobStatus = 'pending_review' | 'approved' | 'rejected'
 export type CommissionStatus = 'none' | 'pending' | 'available' | 'withdrawn' | 'voided'
 export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'reversed'
+export type PayoutMethod = 'bank' | 'upi'
 
 export type ProfileRow = {
   id: string
@@ -30,6 +31,7 @@ export type ProfileRow = {
   pan_number: string | null
   terms_accepted_at: string | null
   bank_last4: string | null
+  upi_id: string | null
   created_at: string
 }
 
@@ -85,9 +87,11 @@ export type WithdrawalRequestRow = {
   id: string
   user_id: string
   amount: number
-  bank_holder_name: string
-  bank_account_number: string
-  bank_ifsc: string
+  payout_method: PayoutMethod
+  bank_holder_name: string | null
+  bank_account_number: string | null
+  bank_ifsc: string | null
+  upi_id: string | null
   status: WithdrawalStatus
   admin_notes: string | null
   created_at: string
@@ -97,10 +101,10 @@ export type WithdrawalRequestRow = {
   reversed_by: string | null
 }
 
-/** Browser-facing withdrawal record — the bank fields stay server-side. */
+/** Browser-facing withdrawal record — payout fields stay server-side. */
 export type WithdrawalSummaryRow = Pick<
   WithdrawalRequestRow,
-  'id' | 'user_id' | 'amount' | 'status' | 'created_at' | 'processed_at'
+  'id' | 'user_id' | 'amount' | 'payout_method' | 'status' | 'created_at' | 'processed_at'
 >
 
 export type JobMarkRow = {
@@ -351,11 +355,12 @@ export type Database = {
         Returns: Json
       }
       update_own_profile: { Args: { p_holder: string; p_account: string; p_ifsc: string; p_pan?: string }; Returns: undefined }
+      set_own_upi: { Args: { p_upi?: string | null }; Returns: undefined }
       release_commissions: { Args: Record<string, never>; Returns: number }
       approve_withdrawal: { Args: { p_id: string }; Returns: Json }
       reject_withdrawal: { Args: { p_id: string; p_note: string }; Returns: Json }
       reverse_withdrawal: { Args: { p_id: string; p_note: string }; Returns: Json }
-      request_withdrawal: { Args: { p_amount: number }; Returns: Json }
+      request_withdrawal: { Args: { p_amount: number; p_method?: string }; Returns: Json }
       void_commission: { Args: { p_payment_id: string; p_refund_amount: number }; Returns: undefined }
       submit_job: {
         Args: {

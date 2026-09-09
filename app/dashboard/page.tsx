@@ -1,11 +1,12 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Copy, CheckCircle2, Gift, Wallet, AlertCircle, Banknote, Clock } from 'lucide-react'
+import { Copy, CheckCircle2, Gift, Wallet, Banknote, Clock } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/lib/toast'
 import Button from '@/components/ui/Button'
 import BankConnectModal from '@/components/BankConnectModal'
+import UpiConnectModal from '@/components/UpiConnectModal'
 import WithdrawalModal from '@/components/WithdrawalModal'
 import { supabase } from '@/lib/supabase'
 import { availableCommission, holdingCommission, lifetimeCommission } from '@/lib/money'
@@ -38,6 +39,7 @@ export default function ReferralDashboard() {
   const [threshold, setThreshold] = useState(DEFAULT_WITHDRAW_THRESHOLD)
   const [copied, setCopied] = useState(false)
   const [bankModalOpen, setBankModalOpen] = useState(false)
+  const [upiModalOpen, setUpiModalOpen] = useState(false)
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false)
 
   const load = useCallback(async () => {
@@ -84,7 +86,8 @@ export default function ReferralDashboard() {
     .filter((w) => w.status === 'pending')
     .reduce((s, w) => s + w.amount, 0)
   const withdrawable = Math.max(0, available - pendingWithdrawTotal)
-  const canWithdraw = withdrawable >= threshold && user.bankConnected
+  const payoutReady = user.bankConnected || Boolean(user.upiId)
+  const canWithdraw = withdrawable >= threshold && payoutReady
   const maskedAccount = user.bankLast4 ? `•••• ${user.bankLast4}` : null
 
   const copyCode = async () => {
@@ -185,17 +188,22 @@ export default function ReferralDashboard() {
 
       <div className="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <h2 className="font-semibold text-gray-800">Withdraw Earnings</h2>
-        {!user.bankConnected ? (
-          <div className="mt-4 flex items-start gap-3 p-4 bg-amber-50 rounded-lg">
-            <AlertCircle className="text-amber-500 mt-0.5 shrink-0" size={18} aria-hidden />
-            <div>
-              <p className="text-sm">Connect your bank account to withdraw earnings.</p>
-              <Button size="sm" className="mt-2" onClick={() => setBankModalOpen(true)}>Connect Bank Account</Button>
+        {!payoutReady ? (
+          <div className="mt-4 space-y-3">
+            <p className="text-sm text-gray-600">Add a payout method to withdraw earnings.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => setBankModalOpen(true)}>Connect Bank Account</Button>
+              <Button size="sm" variant="outline" onClick={() => setUpiModalOpen(true)}>Add UPI ID</Button>
             </div>
           </div>
         ) : (
           <div className="mt-4">
-            <p className="text-sm text-gray-600">Bank connected{maskedAccount ? `: ${maskedAccount}` : ''} ({user.email})</p>
+            {user.bankConnected && (
+              <p className="text-sm text-gray-600">Bank connected{maskedAccount ? `: ${maskedAccount}` : ''} ({user.email})</p>
+            )}
+            {user.upiId && (
+              <p className="text-sm text-gray-600">{user.bankConnected ? 'UPI' : 'UPI connected'}: {user.upiId}</p>
+            )}
             {canWithdraw ? (
               <Button className="mt-3" onClick={() => setWithdrawModalOpen(true)}>Request Withdrawal</Button>
             ) : (
@@ -206,13 +214,19 @@ export default function ReferralDashboard() {
           </div>
         )}
 
+        {!user.upiId && (
+          <p className="mt-3 text-xs text-gray-500">
+            Prefer payouts via UPI? <button onClick={() => setUpiModalOpen(true)} className="underline text-primary-600 hover:text-primary-700">Add a UPI ID</button>.
+          </p>
+        )}
+
         {withdrawals.length > 0 && (
           <div className="mt-6">
             <h3 className="text-sm font-medium text-gray-700">Withdrawal Requests</h3>
             <ul className="mt-2 space-y-2">
               {withdrawals.map((w) => (
                 <li key={w.id} className="flex justify-between text-sm py-2 border-b border-gray-100">
-                  <span>₹{w.amount.toFixed(2)} · {new Date(w.created_at).toLocaleDateString()}</span>
+                  <span>₹{w.amount.toFixed(2)} · {w.payout_method === 'upi' ? 'UPI' : 'Bank'} · {new Date(w.created_at).toLocaleDateString()}</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[w.status] ?? 'bg-gray-100 text-gray-600'}`}>{w.status}</span>
                 </li>
               ))}
@@ -226,12 +240,20 @@ export default function ReferralDashboard() {
         onClose={() => setBankModalOpen(false)}
         onSuccess={() => refreshProfile()}
       />
+      <UpiConnectModal
+        isOpen={upiModalOpen}
+        onClose={() => setUpiModalOpen(false)}
+        onSuccess={() => refreshProfile()}
+      />
       <WithdrawalModal
         isOpen={withdrawModalOpen}
         onClose={() => setWithdrawModalOpen(false)}
         maxAmount={withdrawable}
         threshold={threshold}
         onSuccess={() => load()}
+        defaultMethod={user.upiId ? 'upi' : 'bank'}
+        hasBank={user.bankConnected}
+        hasUpi={Boolean(user.upiId)}
       />
     </div>
   )

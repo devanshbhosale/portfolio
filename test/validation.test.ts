@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { withdrawalSchema, bankConnectSchema, ifscSchema, accountNumberSchema, panSchema, reportSchema, createOrderSchema } from '@/lib/validation'
+import { withdrawalSchema, bankConnectSchema, ifscSchema, accountNumberSchema, panSchema, upiIdSchema, upiConnectSchema, reportSchema, createOrderSchema } from '@/lib/validation'
 
 describe('withdrawalSchema — request_withdrawal input', () => {
   it('accepts a positive amount and coerces numeric strings', () => {
@@ -14,6 +14,35 @@ describe('withdrawalSchema — request_withdrawal input', () => {
     // Cap from the schema: amount > 1,000,000 must be rejected.
     expect(withdrawalSchema.safeParse({ amount: 1_000_001 }).success).toBe(false)
     expect(withdrawalSchema.safeParse({}).success).toBe(false)
+  })
+
+  it('carries the payout method, defaulting to bank', () => {
+    const upi = withdrawalSchema.safeParse({ amount: 500, method: 'upi' })
+    expect(upi.success).toBe(true)
+    if (upi.success) expect(upi.data.method).toBe('upi')
+    const fallback = withdrawalSchema.safeParse({ amount: 500 })
+    expect(fallback.success).toBe(true)
+    if (fallback.success) expect(fallback.data.method).toBe('bank')
+    expect(withdrawalSchema.safeParse({ amount: 500, method: 'paypal' }).success).toBe(false)
+  })
+})
+
+describe('UPI ID validation (instant payout rail)', () => {
+  it('rejects malformed UPI IDs', () => {
+    for (const bad of ['x@i', '@upi', 'ram@', 'ram kumar@upi', 'Ram@upi', ''])
+      expect(upiIdSchema.safeParse(bad).success).toBe(false)
+  })
+
+  it('accepts realistic UPI IDs', () => {
+    expect(upiIdSchema.safeParse('ram.kumar@upi').success).toBe(true)
+    expect(upiIdSchema.safeParse('ramkumar-1@oksbi').success).toBe(true)
+    expect(upiIdSchema.safeParse('9876543210@ybl').success).toBe(true)
+    expect(upiIdSchema.safeParse('ram@paytm').success).toBe(true)
+  })
+
+  it('upiConnect requires a valid UPI ID', () => {
+    expect(upiConnectSchema.safeParse({ upiId: 'ram.kumar@upi' }).success).toBe(true)
+    expect(upiConnectSchema.safeParse({ upiId: 'nope' }).success).toBe(false)
   })
 })
 

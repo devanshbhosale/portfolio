@@ -18,12 +18,18 @@ export const verifyPaymentSchema = z.object({
 export const ifscSchema = z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'IFSC must look like HDFC0001234')
 export const accountNumberSchema = z.string().regex(/^\d{9,18}$/, 'Account number must be 9-18 digits')
 export const panSchema = z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, 'PAN must look like ABCDE1234F')
+// Mirrors the DB CHECK (lowercase) — callers pass .toLowerCase() first.
+export const upiIdSchema = z.string().regex(/^[a-z0-9._-]{2,}@[a-z]{2,}$/, 'UPI ID must look like name@bank')
 
 export const bankConnectSchema = z.object({
   holderName: z.string().trim().min(2).max(120),
   accountNumber: accountNumberSchema,
   ifsc: ifscSchema,
   pan: panSchema,
+})
+
+export const upiConnectSchema = z.object({
+  upiId: upiIdSchema,
 })
 
 export const REPORT_REASONS = ['fake_scam', 'expired', 'asks_for_money', 'discriminatory', 'other'] as const
@@ -39,4 +45,5 @@ export const reportSchema = z.object({
 
 export const withdrawalSchema = z.object({
   amount: z.coerce.number().positive().max(1_000_000),
+  method: z.enum(['bank', 'upi']).default('bank'),
 })

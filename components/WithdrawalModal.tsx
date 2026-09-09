@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Wallet } from 'lucide-react'
 import Button from '@/components/ui/Button'
@@ -11,11 +11,19 @@ interface WithdrawalModalProps {
   maxAmount: number       // rupees the user can withdraw right now
   threshold: number       // minimum withdrawal
   onSuccess: () => void
+  defaultMethod: 'bank' | 'upi'
+  hasBank: boolean
+  hasUpi: boolean
 }
 
-export default function WithdrawalModal({ isOpen, onClose, maxAmount, threshold, onSuccess }: WithdrawalModalProps) {
+export default function WithdrawalModal({ isOpen, onClose, maxAmount, threshold, onSuccess, defaultMethod, hasBank, hasUpi }: WithdrawalModalProps) {
   const { toast } = useToast()
   const [amount, setAmount] = useState('')
+  const [method, setMethod] = useState<'bank' | 'upi'>(defaultMethod)
+
+  // The modal stays mounted (AnimatePresence only hides it), so the initial
+  // useState would go stale once a user connects UPI mid-session.
+  useEffect(() => { if (isOpen) setMethod(defaultMethod) }, [isOpen, defaultMethod])
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -39,7 +47,7 @@ export default function WithdrawalModal({ isOpen, onClose, maxAmount, threshold,
       const res = await fetch('/api/withdrawals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: value }),
+        body: JSON.stringify({ amount: value, method }),
       })
       const data = (await res.json()) as { error?: string }
       if (!res.ok) {
@@ -89,6 +97,29 @@ export default function WithdrawalModal({ isOpen, onClose, maxAmount, threshold,
                 Available: ₹{maxAmount.toFixed(2)} · Minimum: ₹{threshold}
               </p>
             </div>
+            {hasBank && hasUpi && (
+              <div className="mb-4">
+                <span className="block text-sm font-medium text-gray-700 mb-1">Get paid via</span>
+                <div className="flex gap-2" role="radiogroup" aria-label="Payout method">
+                  {(['bank', 'upi'] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      role="radio"
+                      aria-checked={method === m}
+                      onClick={() => setMethod(m)}
+                      className={`flex-1 px-3 py-2 rounded-lg border text-sm font-medium ${
+                        method === m
+                          ? 'border-primary-600 bg-primary-50 text-primary-700'
+                          : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {m === 'bank' ? 'Bank transfer' : 'UPI'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <label htmlFor="withdraw-amount" className="block text-sm font-medium text-gray-700">Amount (₹)</label>
               <input

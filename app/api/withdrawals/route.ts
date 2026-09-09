@@ -20,10 +20,13 @@ export async function POST(req: Request) {
   const amount = Math.round(parsed.data.amount * 100) / 100
 
   // Transactional check+insert in the DB: locks the referrer's commission
-  // rows, validates threshold/bank/balance, inserts the request.
+  // rows, validates threshold/payout-rail/balance, inserts the request.
   // MUST use the session client — request_withdrawal resolves auth.uid(),
   // which is NULL under the service-role key.
-  const { error } = await createRouteClient().rpc('request_withdrawal', { p_amount: amount })
+  const { error } = await createRouteClient().rpc('request_withdrawal', {
+    p_amount: amount,
+    p_method: parsed.data.method,
+  })
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
@@ -35,11 +38,11 @@ export async function GET() {
   const profile = await getAuthedProfile()
   if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Explicit safe columns — the bank number on file is payout data, never
-  // served back to the browser.
+  // Explicit safe columns — the bank number / UPI on file are payout data,
+  // never served back to the browser.
   const { data, error } = await createRouteClient()
     .from('withdrawal_requests')
-    .select('id, user_id, amount, status, created_at, processed_at')
+    .select('id, user_id, amount, payout_method, status, created_at, processed_at')
     .eq('user_id', profile.id)
     .order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: 'Could not load withdrawals' }, { status: 500 })

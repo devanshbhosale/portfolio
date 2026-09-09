@@ -4,7 +4,7 @@ import PageHeader from '@/components/PageHeader'
 export const metadata: Metadata = {
   title: 'Privacy Policy — Jobkar',
   description:
-    'How Jobkar collects, uses, and protects your data: account information, bank details for payouts, job data sourcing, cookies, and your rights.',
+    'How Jobkar collects, uses, and protects your data: account information, bank or UPI details for payouts, job data sourcing, cookies, and your rights.',
 }
 
 interface Section {
@@ -17,7 +17,7 @@ const sections: Section[] = [
     heading: '1. What we collect',
     paragraphs: [
       'When you create an account, we store your name, email address, and login credentials. We also keep your saved-job preferences and referral program history on your account.',
-      'If you connect a bank account for referral payouts, we store the account holder name, account number, IFSC code, and PAN you enter in the bank-connect form. These details are used solely to send your referral earnings to you and for legally required tax reporting — they are never shared with anyone else.',
+      'If you connect a bank account for referral payouts, we store the account holder name, account number, IFSC code, and PAN you enter in the bank-connect form. If you add a UPI ID instead, we store just that ID. These details are used solely to send your referral earnings to you and for legally required tax reporting — they are never shared with anyone else.',
     ],
   },
   {

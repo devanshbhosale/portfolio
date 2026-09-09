@@ -43,6 +43,7 @@ await checkContains('/signup', 'I am 18 or older', '/signup has the 18+/consent 
 await checkContains('/terms', 'operatorOP', '/terms names the operator')
 await checkContains('/terms', 'Mumbai', '/terms carries governing-law venue')
 await checkContains('/privacy', 'IFSC', '/privacy discloses bank-data collection')
+await checkContains('/privacy', 'UPI ID', '/privacy discloses UPI payout collection')
 await checkContains('/grievance', '48 hours', '/grievance carries the acknowledgement SLA')
 
 // 2) /api/jobs serves NO premium fields to an anonymous caller.

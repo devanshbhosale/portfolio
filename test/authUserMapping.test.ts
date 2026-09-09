@@ -10,7 +10,7 @@ import { resolve } from 'node:path'
 
 const SAFE_COLUMNS = [
   'id', 'email', 'full_name', 'role', 'referral_code', 'premium_plan',
-  'premium_expires_at', 'bank_connected_at', 'bank_last4', 'pan_number',
+  'premium_expires_at', 'bank_connected_at', 'bank_last4', 'upi_id', 'pan_number',
   'terms_accepted_at', 'created_at',
 ] as const
 
@@ -39,10 +39,16 @@ describe('profiles browser-safe column set', () => {
     expect(src).not.toContain('profile.bank_account_number')
   })
 
-  it('withdrawal history exposes no bank number to the browser', () => {
+  it('toAuthUser carries upiId (source-invariant)', () => {
+    const src = authSrc()
+    expect(src).toContain('upiId: profile.upi_id ?? null')
+  })
+
+  it('withdrawal history exposes no bank number or UPI to the browser', () => {
     const src = readFileSync(resolve('app/api/withdrawals/route.ts'), 'utf8')
     expect(src).not.toMatch(/select\('\*'\)/)
     expect(src).not.toContain('bank_account_number')
+    expect(src).not.toMatch(/upi_id/)
   })
 
   it('the public settings response strips mrps — invented prices are never served', () => {
