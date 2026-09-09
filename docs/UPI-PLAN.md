@@ -1,5 +1,12 @@
 # UPI Payout Option — Execution Plan
 
+> **BUILD COMPLETE — EXECUTED 2026-09-09** (historical; kept for the deploy-order
+> rationale). All fixes 1–5 applied, deployed in the prescribed order (website
+> `fb9a233` pushed + live, dashboard repo `7a02ea8` committed + built, migration
+> applied + verified), Test Buyer browser E2E passed (UPI save, ₹500 UPI
+> withdrawal, safe-column GET), smoke 24/24. Test row + seeded commission deleted
+> after verification; Test Buyer keeps `e2ebuyer@upi` on the profile.
+
 > Status snapshot saved 2026-09-08. The UPI feature is **code-complete in
 > BOTH repos, all gates green, but UNCOMMITTED and NOT deployed**. Preship
 > review ran (code-review-preshipment agent): verdict **DO NOT SHIP** with
