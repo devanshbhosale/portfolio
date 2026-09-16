@@ -1,7 +1,7 @@
 'use client'
-import { useCallback, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Check, Crown, ShieldCheck, RefreshCcw, Zap } from 'lucide-react'
 import PricingCard, { type PlanCard } from '@/components/PricingCard'
@@ -10,43 +10,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/lib/toast'
 import { PLAN_NAMES, SHARED_FEATURES } from '@/lib/plans'
 import type { PlanName } from '@/lib/database.types'
-
-interface RazorpayResponse {
-  razorpay_payment_id: string
-  razorpay_order_id: string
-  razorpay_signature: string
-}
-interface RazorpayOptions {
-  key: string
-  amount: number
-  currency: string
-  name: string
-  description: string
-  order_id: string
-  prefill: { email?: string }
-  theme: { color: string }
-  handler: (response: RazorpayResponse) => void
-  modal?: { ondismiss?: () => void }
-}
-declare global {
-  interface Window {
-    Razorpay?: new (options: RazorpayOptions) => { open: () => void }
-  }
-}
-
-let scriptPromise: Promise<boolean> | null = null
-function loadRazorpayScript(): Promise<boolean> {
-  if (typeof window === 'undefined') return Promise.resolve(false)
-  if (window.Razorpay) return Promise.resolve(true)
-  scriptPromise ??= new Promise((resolve) => {
-    const script = document.createElement('script')
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-    script.onload = () => resolve(true)
-    script.onerror = () => resolve(false)
-    document.body.appendChild(script)
-  })
-  return scriptPromise
-}
 
 const BADGES: Partial<Record<PlanName, string>> = {
   Monthly: 'Most Popular',
@@ -72,35 +35,49 @@ export default function PricingPlans({
   const { user, refreshProfile } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [selectedPlan, setSelectedPlan] = useState<PlanName | null>(null)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [referralCode, setReferralCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pollingPaymentId, setPollingPaymentId] = useState<string | null>(null)
 
-  const pollVerification = useCallback(
-    async (paymentId: string, orderId: string): Promise<boolean> => {
+  // Dodo redirects back to /pricing?payment_id=…&status=… after checkout.
+  // Poll verify-payment until the webhook lands (≤30s), then refresh.
+  useEffect(() => {
+    const paymentId = searchParams.get('payment_id')
+    if (!paymentId || !user || pollingPaymentId === paymentId) return
+    setPollingPaymentId(paymentId)
+    toast('Payment received — confirming your premium access…')
+    router.replace('/pricing', { scroll: false })
+    ;(async () => {
       for (let attempt = 0; attempt < 10; attempt++) {
         await new Promise((r) => setTimeout(r, 3000))
         try {
           const res = await fetch('/api/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ razorpay_payment_id: paymentId, razorpay_order_id: orderId }),
+            body: JSON.stringify({ payment_id: paymentId }),
           })
           if (res.ok) {
             const data = (await res.json()) as { verified?: boolean }
-            if (data.verified) return true
+            if (data.verified) {
+              refreshProfile()
+              toast('Premium activated!')
+              setPollingPaymentId(null)
+              return
+            }
           }
         } catch {
           // keep polling
         }
       }
-      return false
-    },
-    [],
-  )
+      toast('Payment is processing. Premium activates within a few minutes — if not, contact jobkarsupport@gmail.com', 'error')
+      setPollingPaymentId(null)
+    })()
+  }, [searchParams, user, pollingPaymentId, toast, refreshProfile, router])
 
   const handleSelect = (name: PlanName) => {
     if (!user) {
@@ -121,56 +98,21 @@ export default function PricingPlans({
     setBusy(true)
     setError(null)
 
-    const scriptOk = await loadRazorpayScript()
-    if (!scriptOk || !window.Razorpay) {
-      setBusy(false)
-      setError('Could not load the payment window. Check your connection and retry.')
-      return
-    }
-
     try {
-      const res = await fetch('/api/create-order', {
+      const res = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: selectedPlan, referralCode: referralCode.trim() || undefined }),
       })
-      const order = (await res.json()) as { id?: string; amount?: number; currency?: string; error?: string }
-      if (!res.ok || !order.id || !order.amount) {
+      const session = (await res.json()) as { checkout_url?: string; error?: string }
+      if (!res.ok || !session.checkout_url) {
         setBusy(false)
-        setError(order.error ?? 'Could not start checkout. Try again.')
+        setError(session.error ?? 'Could not start checkout. Try again.')
         return
       }
-
-      const selected = plans.find((p) => p.name === selectedPlan)
-      const razorpay = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-        amount: order.amount,
-        currency: order.currency ?? 'INR',
-        name: 'Jobkar',
-        description: `${selectedPlan} Premium Plan`,
-        order_id: order.id,
-        prefill: { email: user.email },
-        theme: { color: '#1D4ED8' },
-        handler: (response) => {
-          setCheckoutOpen(false)
-          setBusy(false)
-          toast('Payment received — confirming your premium access…')
-          pollVerification(response.razorpay_payment_id, response.razorpay_order_id).then((verified) => {
-            if (verified) {
-              refreshProfile()
-              toast(`Premium activated! (${selectedPlan} plan${selected ? ` — ₹${selected.price.toLocaleString('en-IN')}` : ''})`)
-            } else {
-              toast('Payment is processing. Premium activates within a few minutes — if not, contact jobkarsupport@gmail.com', 'error')
-            }
-          })
-        },
-        modal: {
-          ondismiss: () => {
-            setBusy(false)
-          },
-        },
-      })
-      razorpay.open()
+      // Hosted checkout: hand the customer to Dodo. They come back to
+      // /pricing?payment_id=…, where the poll effect above takes over.
+      window.location.assign(session.checkout_url)
     } catch {
       setBusy(false)
       setError('Something went wrong starting checkout.')

@@ -43,7 +43,7 @@ const faqs: FaqItem[] = [
   {
     question: 'How do I pay for a premium plan?',
     answer:
-      'Payments are processed securely through Razorpay — UPI, cards, net banking, and popular wallets are all supported.',
+      'Payments are processed securely through Dodo Payments — UPI, cards, net banking, and popular wallets are all supported. You complete the payment on a secure hosted checkout page and are brought back to Jobkar.',
   },
   {
     question: 'Are refunds available?',

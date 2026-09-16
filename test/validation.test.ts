@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { withdrawalSchema, bankConnectSchema, ifscSchema, accountNumberSchema, panSchema, upiIdSchema, upiConnectSchema, reportSchema, createOrderSchema } from '@/lib/validation'
+import { withdrawalSchema, bankConnectSchema, ifscSchema, accountNumberSchema, panSchema, upiIdSchema, upiConnectSchema, reportSchema, createCheckoutSchema } from '@/lib/validation'
 
 describe('withdrawalSchema — request_withdrawal input', () => {
   it('accepts a positive amount and coerces numeric strings', () => {
@@ -95,23 +95,23 @@ describe('reportSchema — listing reports', () => {
   })
 })
 
-describe('createOrderSchema — offered plan gate (server-side)', () => {
+describe('createCheckoutSchema — offered plan gate (server-side)', () => {
   it('accepts every offered plan', () => {
-    expect(createOrderSchema.safeParse({ plan: 'Weekly' }).success).toBe(true)
-    expect(createOrderSchema.safeParse({ plan: 'Monthly' }).success).toBe(true)
-    expect(createOrderSchema.safeParse({ plan: 'Lifetime' }).success).toBe(true)
+    expect(createCheckoutSchema.safeParse({ plan: 'Weekly' }).success).toBe(true)
+    expect(createCheckoutSchema.safeParse({ plan: 'Monthly' }).success).toBe(true)
+    expect(createCheckoutSchema.safeParse({ plan: 'Lifetime' }).success).toBe(true)
   })
 
   it('rejects retired and invented plans', () => {
     // Quarterly/Annual are no longer sold — an order for them must fail here,
-    // before any Razorpay order exists.
-    expect(createOrderSchema.safeParse({ plan: 'Quarterly' }).success).toBe(false)
-    expect(createOrderSchema.safeParse({ plan: 'Annual' }).success).toBe(false)
-    expect(createOrderSchema.safeParse({ plan: 'Daily' }).success).toBe(false)
+    // before any Dodo checkout session exists.
+    expect(createCheckoutSchema.safeParse({ plan: 'Quarterly' }).success).toBe(false)
+    expect(createCheckoutSchema.safeParse({ plan: 'Annual' }).success).toBe(false)
+    expect(createCheckoutSchema.safeParse({ plan: 'Daily' }).success).toBe(false)
   })
 
   it('passes a well-formed referral code through', () => {
-    const parsed = createOrderSchema.safeParse({ plan: 'Lifetime', referralCode: 'JK-ABCD1234' })
+    const parsed = createCheckoutSchema.safeParse({ plan: 'Lifetime', referralCode: 'JK-ABCD1234' })
     expect(parsed.success).toBe(true)
     if (parsed.success) expect(parsed.data.referralCode).toBe('JK-ABCD1234')
   })

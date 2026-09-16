@@ -1,21 +1,20 @@
 import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
-import Razorpay from 'razorpay'
 import { adminClient } from '@/lib/server'
-import { classifyPayments, windowFromEpoch, type PaymentLike } from '@/lib/reconcilePayments'
+import { classifyPayments, windowFromIso, type PaymentLike } from '@/lib/reconcilePayments'
+import { dodo } from '@/lib/dodo'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
-/** Payment self-heal. If the Razorpay webhook is dropped (the 2026-08-21
- *  incident: checkout said "Payment Successful", premium never activated),
- *  nothing replays it — purchases are only written at fulfillment. This cron
- *  lists recent payments straight from Razorpay and replays each captured
- *  one through the idempotent process_payment RPC ('duplicate' is success).
- *  Scheduled daily at 06:00 with a 7-day window (Hobby plan allows only
- *  once-daily crons) — a dropped webhook heals within ≤24h. For 15-min
- *  recovery, point a free external pinger (e.g. cron-job.org) at this path
- *  with the CRON_SECRET bearer header; the route itself is unchanged. */
+/** Payment self-heal. If the Dodo webhook is dropped, nothing replays it —
+ *  purchases are only written at fulfillment. This cron lists recent
+ *  payments straight from Dodo and replays each succeeded one through the
+ *  idempotent process_payment RPC ('duplicate' is success). Scheduled daily
+ *  at 06:00 with a 7-day window (Hobby plan allows only once-daily crons) —
+ *  a dropped webhook heals within ≤24h. For 15-min recovery, point a free
+ *  external pinger (e.g. cron-job.org) at this path with the CRON_SECRET
+ *  bearer header; the route itself is unchanged. */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET
   const auth = req.headers.get('authorization')
@@ -31,22 +30,15 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url)
   const days = Math.min(7, Math.max(1, Number(url.searchParams.get('days')) || 1))
-  const from = windowFromEpoch(Math.floor(Date.now() / 1000), days)
-
-  const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!,
-  })
+  const from = windowFromIso(Date.now(), days)
 
   // ponytail: page cap 10×100 — this volume is far below it; raise only if
   // a 7-day window ever exceeds 1000 payments.
   const payments: PaymentLike[] = []
   for (let page = 0; page < 10; page++) {
-    const res = (await razorpay.payments.all({
-      from,
-      count: 100,
-      skip: page * 100,
-    })) as unknown as { items: PaymentLike[] }
+    const res = await dodo<{ items: PaymentLike[] }>(
+      `/payments?created_at_gte=${encodeURIComponent(from)}&page_size=100&page_number=${page}`,
+    )
     const items = res.items ?? []
     payments.push(...items)
     if (items.length < 100) break

@@ -4,7 +4,7 @@ A blue-collar job portal with premium listings, referral rewards, and operator-m
 
 | Repo | What it is | Tech |
 |------|-----------|------|
-| **`jobkar`** (this repo) | Public website + payments + referral dashboard | Next.js 14, Supabase (Postgres + Auth + RLS), Razorpay |
+| **`jobkar`** (this repo) | Public website + payments + referral dashboard | Next.js 14, Supabase (Postgres + Auth + RLS), Dodo Payments |
 | **`jobkar-dashboard`** | Desktop operator control panel (Windows `.exe`) | Electron + React + Tailwind |
 
 The website is the only public surface. All listing management (scrape → review → approve → withdrawals) happens in the **desktop app**, never on the public domain.
@@ -12,10 +12,10 @@ The website is the only public surface. All listing management (scrape → revie
 ## Architecture
 
 ```
-┌──────────────────────┐        ┌──────────────────────────┐
-│   Supabase Cloud     │        │   Razorpay (Payments)    │
-│  Postgres + Auth     │◄───────┤   Webhook → process_payment│
-│  Realtime + RLS      │        └──────────────────────────┘
+┌──────────────────────┐        ┌──────────────────────────────┐
+│   Supabase Cloud     │        │  Dodo Payments (checkout +   │
+│  Postgres + Auth     │◄───────┤  webhook → process_payment)  │
+│  Realtime + RLS      │        └──────────────────────────────┘
 └──────────┬───────────┘
            │
      ┌─────┴─────────────────────────────┐
@@ -33,7 +33,7 @@ The website is the only public surface. All listing management (scrape → revie
 - **One DB, two clients.** Both repos share Supabase. The website is read-mostly; the desktop app is the write path.
 - **Operator accounts.** Listing management is done by accounts with `role = 'operator'` (no `agent`/`admin` roles — see the split migration). Operators sign in to the desktop app, not the website.
 - **Live sync.** The website subscribes to the `jobs_version` sentinel table via Supabase Realtime. When the desktop app inserts/updates/deletes a `job_listings` row, a trigger bumps `jobs_version`, and the website refetches immediately — no polling, no `ENABLE_DASHBOARDS` mode.
-- **Secrets.** Website secrets (`SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_*`, `CRON_SECRET`) live only in Vercel project settings. The desktop app holds only `SUPABASE_URL` + `SUPABASE_ANON_KEY` + `GEMINI_API_KEY`, and uses RLS + operator-gated RPCs.
+- **Secrets.** Website secrets (`SUPABASE_SERVICE_ROLE_KEY`, `DODO_PAYMENTS_*`, `DODO_PRODUCT_IDS`, `CRON_SECRET`) live only in Vercel project settings. The desktop app holds only `SUPABASE_URL` + `SUPABASE_ANON_KEY` + `GEMINI_API_KEY`, and uses RLS + operator-gated RPCs.
 
 ## Cost
 
@@ -42,7 +42,7 @@ The website is the only public surface. All listing management (scrape → revie
 | Supabase Free | ₹0/mo | 500 MB DB, 50k MAU, ~2 verification emails/hour |
 | Vercel Hobby | ₹0/mo | 100 GB bandwidth/mo, daily cron |
 | GitHub Private | ₹0/mo | Both repos stay closed |
-| Razorpay | Pay-as-you-go | ~2% per successful payment (lower for UPI) |
+| Dodo Payments | Pay-as-you-go | Merchant of record — fee per transaction, they handle tax/compliance |
 | Gemini API | Pay-as-you-go | Only for scrape-fallback parsing |
 | Domain (optional) | ₹500–1,000/yr | e.g. `jobkar.in` |
 | **When outgrown** | **Supabase Pro $25/mo** · **Vercel Pro $20/mo** | |
@@ -71,14 +71,16 @@ cp .env.example .env.local   # fill in real keys (see below)
 
 > Upgrading an existing pre-split database? Run `supabase/dashboard-patch.sql` once instead of `schema.sql`.
 
-### 3. Razorpay Setup
+### 3. Dodo Payments Setup
 
-1. Create account at [dashboard.razorpay.com](https://dashboard.razorpay.com) → **Settings → API Keys** → generate **Test** keys.
-2. **Webhooks** → Add webhook: `https://<your-vercel-domain>/api/razorpay-webhook` → select **payment.captured**, **refund.processed**, **payment.failed** → save.
-   > ⚠️ The URL must end in exactly `/api/razorpay-webhook`. A webhook pointed at the bare
-   > site (`https://<your-vercel-domain>/`) accepts the delivery but never fulfills it —
-   > checkout shows "Payment Successful" while `/api/verify-payment` keeps returning
-   > `verified:false` and premium never activates. That was the live bug found 2026-08-21.
+1. Create an account at [app.dodopayments.com](https://app.dodopayments.com) and complete account verification.
+2. In **Test Mode**, create three one-time products (Dashboard → Products): Weekly, Monthly, Lifetime — each priced to match your `site_settings` prices (₹99 / ₹199 / ₹999 by default).
+3. **Developers → API Keys** → generate a Test API key (`dodo_test_…`).
+4. **Developer → Webhooks → Add endpoint** → URL `https://<your-vercel-domain>/api/dodo-webhook` → select **payment.succeeded**, **payment.failed**, **refund.succeeded** → save → copy the endpoint's **signing secret** (`whsec_…`) from its Overview tab.
+   > ⚠️ The URL must end in exactly `/api/dodo-webhook`. A webhook pointed at the bare
+   > site accepts the delivery but never fulfills it — checkout succeeds while
+   > `/api/verify-payment` keeps returning `verified:false` and premium never activates.
+5. Map each plan to its product id in `DODO_PRODUCT_IDS` (see below).
 
 ### 4. Configure `.env.local`
 
@@ -87,9 +89,10 @@ NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-RAZORPAY_KEY_ID=rzp_test_xxx
-RAZORPAY_KEY_SECRET=xxx
-NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_xxx
+DODO_PAYMENTS_API_KEY=dodo_test_xxx
+DODO_PAYMENTS_WEBHOOK_KEY=whsec_xxx
+DODO_PAYMENTS_ENVIRONMENT=test_mode
+DODO_PRODUCT_IDS=Weekly=pdt_xxx,Monthly=pdt_xxx,Lifetime=pdt_xxx
 
 CRON_SECRET=long-random-string-here
 ```
@@ -115,16 +118,16 @@ jobkar/
 │   ├── api/                      # API routes
 │   │   ├── jobs/[id]/            # Public job detail (contact_info gated)
 │   │   ├── settings/             # Public pricing config
-│   │   ├── create-order/         # Razorpay order (server-priced)
+│   │   ├── create-checkout/      # Dodo hosted checkout session (server-priced pin)
 │   │   ├── verify-payment/       # Client confirmation polling
-│   │   ├── razorpay-webhook/     # HMAC → process_payment RPC
+│   │   ├── dodo-webhook/         # Standard-Webhooks signature → process_payment RPC
 │   │   ├── withdrawals/          # Balance-checked withdrawals (session client)
 │   │   └── cron/release-commissions/  # Vercel cron (CRON_SECRET)
 │   ├── jobs/                     # Public feed + detail pages
 │   ├── dashboard/                # Jobseeker referral dashboard
 │   ├── login/                    # Supabase email/password
 │   ├── signup/                   # Supabase signup + full_name
-│   ├── pricing/                  # Razorpay checkout + verify-payment polling
+│   ├── pricing/                  # Dodo hosted checkout + verify-payment polling
 │   ├── profile/                  # User profile
 │   ├── page.tsx                  # Landing (live jobs + stats)
 │   ├── sitemap.ts / robots.ts    # SEO
@@ -142,6 +145,7 @@ jobkar/
 │   ├── database.types.ts         # Hand-written typed schema (v10)
 │   ├── supabase.ts               # Browser client
 │   ├── server.ts                 # Route-handler + service-role clients
+│   ├── dodo.ts                   # Dodo REST helper + webhook signature verify
 │   ├── settings.ts               # site_settings fetch + defaults
 │   ├── plans.ts                  # Prices/durations/tiers
 │   ├── money.ts                  # Commission/expiry/balance math
@@ -154,9 +158,9 @@ jobkar/
 │   ├── schema.sql                # v10 schema (tables, RLS, views, RPCs)
 │   ├── dashboard-patch.sql       # Pre-split → v10 migration (once)
 │   └── seed.sql                  # 12 demo jobs + settings
-├── test/money.test.ts            # Commission/expiry/balance math
+├── test/                         # vitest suites (money math, reconcile, validation, …)
 ├── vitest.config.ts
-├── vercel.json                   # Daily cron for release_commissions
+├── vercel.json                   # Daily crons (release_commissions + reconcile-payments)
 └── .github/workflows/ci.yml
 ```
 
@@ -175,13 +179,13 @@ jobkar/
 
 1. Jobseeker clicks a blurred premium card → **View Premium Plans** → `/pricing`.
 2. Selects plan → optional referral code → **Pay Now**.
-3. Frontend calls `/api/create-order` → **price from server-side `site_settings`** (never from client).
-4. Razorpay Checkout opens → user pays → `/api/verify-payment` polls → premium unlocks.
-5. Webhook (`/api/razorpay-webhook`) → HMAC verify → amount vs settings → `process_payment` RPC (idempotent) → premium expiry = `max(current, now) + duration` → tiered referral commission (20%/25%) set to `pending`.
+3. Frontend calls `/api/create-checkout` → Dodo hosted checkout session with `metadata` attribution (userId, plan, referralCode) + an order-time price pin from server-side `site_settings` (never from client).
+4. Customer pays on Dodo's hosted page → redirected back to `/pricing?payment_id=…` → `/api/verify-payment` polls → premium unlocks.
+5. Webhook (`/api/dodo-webhook`) → Standard-Webhooks signature verify → amount vs price pin → `process_payment` RPC (idempotent) → premium expiry = `max(current, now) + duration` → tiered referral commission (20%/25%) set to `pending`.
 
 ### Referral Commission
 
-- 20% (Weekly/Monthly) or 25% (Quarterly/Annual) of plan price.
+- 20% (Weekly/Monthly) or 25% (Lifetime) of plan price.
 - **15-minute holding period**, then available → withdrawn via `/api/withdrawals` → operator approves in the desktop app (`approve_withdrawal` RPC, atomic + partial consumption). Self-referral blocked.
 
 ## Running Tests
@@ -190,7 +194,7 @@ jobkar/
 npx tsc --noEmit      # TypeScript strict
 npm run lint          # ESLint
 npm run build         # Next.js build
-npx vitest run        # money math
+npx vitest run        # reconcile + validation + money + jobs suites
 ```
 
 CI runs all four on every push to `main`.
@@ -198,10 +202,10 @@ CI runs all four on every push to `main`.
 ## Security Notes
 
 - **RLS** on all tables; public reads only via `public_jobs` view (safe columns). `contact_info`/`admin_notes` never appear publicly. Operators read all rows via `is_operator()`-gated policies + `operator_profiles` view (which excludes `bank_*`).
-- **Webhook**: raw-body HMAC with `timingSafeEqual`; amount verified against `site_settings`; idempotent on unique `payment_id`; full refunds void commissions (partial refunds change nothing).
+- **Webhook**: Standard-Webhooks HMAC (`webhook-id.webhook-timestamp.body`, base64 secret) with `timingSafeEqual`; amount verified against the checkout-time price pin; idempotent on unique `payment_id`; full refunds void commissions (partial refunds change nothing).
 - **Withdrawal integrity**: `request_withdrawal` RPC locks commission rows and validates threshold/bank/balance in one transaction; `approve_withdrawal` / `reverse_withdrawal` lock rows and re-check the ledger mid-loop (no double-spend; 15-min reverse window).
-- **Money math**: prices always server-side; Razorpay order notes are strings (API requirement).
-- **No service-role key** in the repo or on operator machines; cron guarded by `CRON_SECRET`.
+- **Money math**: prices always server-side; Dodo metadata values are strings.
+- **No service-role key** in the repo or on operator machines; cron guarded by `CRON_SECRET`. The Dodo API key and webhook secret are server-only env vars — Dodo checkout is fully hosted, so no payment credentials ever reach the browser.
 - **XSS**: `source_link`/`apply_url` rendered only through `safeExternalUrl()` (http/https allowlist); DB check constraint rejects non-http(s) links; scraped descriptions render as escaped text.
 - **CSV export** (desktop app) neutralizes formula-injection cells.
 

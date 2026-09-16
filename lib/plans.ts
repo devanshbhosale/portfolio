@@ -6,7 +6,7 @@ export const PLAN_NAMES = ['Weekly', 'Monthly', 'Lifetime'] as const
 
 /** Retired plans no longer sold, but still fulfillable: historical buyers keep
  *  their expiry and pre-change captured payments must replay cleanly. The DB
- *  CHECK constraints accept these; only create-order validation excludes them. */
+ *  CHECK constraints accept these; only create-checkout validation excludes them. */
 export const LEGACY_PLAN_NAMES = ['Quarterly', 'Annual'] as const
 
 /** Everything process_payment() can fulfill — webhook + reconciler use this. */

@@ -25,7 +25,7 @@ function fromRow(row: SiteSettingsRow): SiteSettings {
   return {
     prices: {
       // `!= null`, not `||`: a deliberate free plan (0 paise) must win,
-      // otherwise create-order and the webhook use stale defaults.
+      // otherwise create-checkout and the webhook use stale defaults.
       Weekly: row.price_weekly != null ? row.price_weekly : d.prices.Weekly,
       Monthly: row.price_monthly != null ? row.price_monthly : d.prices.Monthly,
       Lifetime: row.price_lifetime != null ? row.price_lifetime : d.prices.Lifetime,
@@ -49,7 +49,7 @@ function fromRow(row: SiteSettingsRow): SiteSettings {
 /** Server-side settings fetch. Money-path fail-closed: a transient Supabase
  *  error must NOT silently fall back to hardcoded code defaults, or the
  *  webhook would validate (and fulfill) a paid order against the wrong
- *  prices. Callers (create-order, webhook, settings GET) convert the throw
+ *  prices. Callers (create-checkout, webhook, settings GET) convert the throw
  *  into a clean 5xx. */
 export async function getSiteSettings(): Promise<SiteSettings> {
   const { data, error } = await adminClient()

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function PricingPage() {
   // Server-computed: real job counts (same source as the homepage) and live
-  // dashboard-editable prices/MRPs. Animated sections + Razorpay checkout
+  // dashboard-editable prices/MRPs. Animated sections + Dodo hosted checkout
   // live in PricingPlans (client) — motion.* can't render from this tree.
   const db = adminClient()
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()

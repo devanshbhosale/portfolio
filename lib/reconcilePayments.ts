@@ -7,13 +7,12 @@ import { FULFILLABLE_PLAN_NAMES } from './plans'
 const PLANS: readonly string[] = FULFILLABLE_PLAN_NAMES
 
 export interface PaymentLike {
-  id: string
+  payment_id: string
   status: string
-  amount: number // paise
+  total_amount: number // smallest currency unit (paise for INR)
   currency: string
-  order_id: string | null
-  notes: Record<string, string> | null
-  created_at: number // epoch seconds
+  metadata: Record<string, string> | null
+  subscription_id?: string | null
 }
 
 export interface ReplayCandidate {
@@ -37,44 +36,44 @@ export function classifyPayments(payments: PaymentLike[]): ClassifyResult {
 
   for (const p of payments) {
     if (p.status === 'refunded') {
-      skipped.push({ id: p.id, reason: 'refunded_manual_review' })
+      skipped.push({ id: p.payment_id, reason: 'refunded_manual_review' })
       continue
     }
-    if (p.status !== 'captured') {
-      skipped.push({ id: p.id, reason: `status_${p.status}` })
+    if (p.status !== 'succeeded') {
+      skipped.push({ id: p.payment_id, reason: `status_${p.status}` })
       continue
     }
 
-    const notes = p.notes ?? {}
-    const { userId, plan, orderAmount } = notes
+    const notes = p.metadata ?? {}
+    const { userId, plan, expectedAmount } = notes
     if (!userId || !plan) {
-      skipped.push({ id: p.id, reason: 'missing_attribution' })
+      skipped.push({ id: p.payment_id, reason: 'missing_attribution' })
       continue
     }
     if (!PLANS.includes(plan)) {
-      skipped.push({ id: p.id, reason: 'unknown_plan' })
+      skipped.push({ id: p.payment_id, reason: 'unknown_plan' })
       continue
     }
     if (p.currency !== 'INR') {
-      skipped.push({ id: p.id, reason: 'unexpected_currency' })
+      skipped.push({ id: p.payment_id, reason: 'unexpected_currency' })
       continue
     }
-    const pinnedPaise = orderAmount !== undefined ? Number(orderAmount) : NaN
+    const pinnedPaise = expectedAmount !== undefined ? Number(expectedAmount) : NaN
     if (!Number.isFinite(pinnedPaise) || pinnedPaise <= 0) {
-      skipped.push({ id: p.id, reason: 'missing_price_pin' })
+      skipped.push({ id: p.payment_id, reason: 'missing_price_pin' })
       continue
     }
-    if (p.amount !== pinnedPaise) {
-      skipped.push({ id: p.id, reason: 'amount_mismatch_vs_pin' })
+    if (p.total_amount !== pinnedPaise) {
+      skipped.push({ id: p.payment_id, reason: 'amount_mismatch_vs_pin' })
       continue
     }
 
     toProcess.push({
       p_user_id: userId,
       p_plan: plan as FulfillablePlanName,
-      p_amount: p.amount / 100,
-      p_payment_id: p.id,
-      p_order_id: p.order_id ?? null,
+      p_amount: p.total_amount / 100,
+      p_payment_id: p.payment_id,
+      p_order_id: p.subscription_id ?? null,
       p_referral_code: notes.referralCode || null,
       p_expected_paise: pinnedPaise,
     })
@@ -83,8 +82,8 @@ export function classifyPayments(payments: PaymentLike[]): ClassifyResult {
   return { toProcess, skipped }
 }
 
-/** `from` epoch for razorpay.payments.all, days clamped 1..7. */
-export function windowFromEpoch(nowEpochSec: number, days: number): number {
+/** ISO `from` for Dodo GET /payments?created_at_gte, days clamped 1..7. */
+export function windowFromIso(nowMs: number, days: number): string {
   const d = Math.min(7, Math.max(1, Math.round(days) || 1))
-  return nowEpochSec - d * 24 * 60 * 60
+  return new Date(nowMs - d * 24 * 60 * 60 * 1000).toISOString()
 }

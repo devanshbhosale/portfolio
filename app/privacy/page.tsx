@@ -23,7 +23,7 @@ const sections: Section[] = [
   {
     heading: '2. How we use your data',
     paragraphs: [
-      'Your information powers the core service: surfacing relevant job listings, processing premium plan payments (handled securely by Razorpay), running the referral rewards program including bank payouts, and providing customer support. We do not sell your personal information to third parties.',
+      'Your information powers the core service: surfacing relevant job listings, processing premium plan payments (handled securely by Dodo Payments), running the referral rewards program including bank payouts, and providing customer support. We do not sell your personal information to third parties.',
     ],
   },
   {
@@ -42,8 +42,8 @@ const sections: Section[] = [
   {
     heading: '5. Processors and where your data lives',
     paragraphs: [
-      'We rely on these processors to run the service: Vercel (hosting), Supabase (database), Razorpay (payments), and Google/Gmail (support email). Your data is processed on their infrastructure, which is located in the United States.',
-      'Payments are handled by Razorpay. Your card and UPI details are entered directly into Razorpay\u2019s checkout and never reach Jobkar\u2019s servers.',
+      'We rely on these processors to run the service: Vercel (hosting), Supabase (database), Dodo Payments (payments), and Google/Gmail (support email). Your data is processed on their infrastructure, which is located in the United States.',
+      'Payments are handled by Dodo Payments. Your card and UPI details are entered directly into Dodo Payments\u2019 hosted checkout page and never reach Jobkar\u2019s servers.',
     ],
   },
   {
