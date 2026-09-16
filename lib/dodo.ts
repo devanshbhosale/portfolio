@@ -28,7 +28,9 @@ export async function dodo<T>(path: string, init?: RequestInit): Promise<T> {
 /** Standard Webhooks signature check (Dodo follows the spec):
  *  HMAC-SHA256 over `webhook-id.webhook-timestamp.rawBody` with the base64
  *  secret from the dashboard (`whsec_…`), compared timing-safe against every
- *  space-separated signature in `webhook-signature`. */
+ *  signature in `webhook-signature`. Signatures arrive space-separated and
+ *  version-prefixed (`v1,<base64>`) per the Standard Webhooks spec — strip
+ *  the prefix before comparing. */
 export function dodoWebhookSignatureValid(
   rawBody: string,
   headers: { id: string | null; timestamp: string | null; signature: string | null },
@@ -39,11 +41,14 @@ export function dodoWebhookSignatureValid(
   const expected = createHmac('sha256', secretBytes)
     .update(`${headers.id}.${headers.timestamp}.${rawBody}`)
     .digest('base64')
-  return headers.signature.split(' ').some((sig) => {
-    const a = Buffer.from(sig)
-    const b = Buffer.from(expected)
-    return a.length === b.length && timingSafeEqual(a, b)
-  })
+  return headers.signature
+    .split(' ')
+    .map((sig) => sig.replace(/^v1,/, ''))
+    .some((sig) => {
+      const a = Buffer.from(sig)
+      const b = Buffer.from(expected)
+      return a.length === b.length && timingSafeEqual(a, b)
+    })
 }
 
 /** Shape of GET /payments/{id} and the payment.succeeded webhook `data`. */
