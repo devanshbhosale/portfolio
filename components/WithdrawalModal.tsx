@@ -54,7 +54,7 @@ export default function WithdrawalModal({ isOpen, onClose, maxAmount, threshold,
         setError(data.error ?? 'Could not submit request')
         return
       }
-      toast('Withdrawal request submitted — you will see the status below once approved.')
+      toast('Withdrawal request submitted. You will see the status below once approved.')
       onSuccess()
       onClose()
       setAmount('')

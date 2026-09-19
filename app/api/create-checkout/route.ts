@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       method: 'POST',
       body: JSON.stringify({
         product_cart: [{ product_id: productId, quantity: 1 }],
-        customer: { email: user.email ?? '', name: user.email?.split('@')[0] ?? 'Jobkar user' },
+        customer: { email: user.email ?? '', name: user.email?.split('@')[0] ?? 'Jobkarbe user' },
         // Hosted checkout collects the billing address itself — no billing
         // object needed for an unconfirmed session.
         return_url: `${origin}/pricing`,

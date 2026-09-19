@@ -64,7 +64,7 @@ export default function SignupPage() {
         <div className="text-center mb-8">
           <CheckCircle2 size={32} className="mx-auto text-primary-600" aria-hidden />
           <h1 className="mt-3 text-3xl font-bold text-gray-900">Create your account</h1>
-          <p className="mt-2 text-gray-600">Browse verified jobs and apply directly — free.</p>
+          <p className="mt-2 text-gray-600">Browse verified jobs and apply directly. It is free.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4" noValidate>

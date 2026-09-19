@@ -4,16 +4,16 @@ import PageHeader from '@/components/PageHeader'
 import FaqAccordion, { type FaqItem } from '@/components/FaqAccordion'
 
 export const metadata: Metadata = {
-  title: 'FAQ — Jobkar',
+  title: 'FAQ',
   description:
-    'Answers to common questions about Jobkar: browsing jobs, premium plans, referral rewards, withdrawals, payments, and refunds.',
+    'Answers to common questions about Jobkarbe: browsing jobs, premium plans, referral rewards, withdrawals, payments, and refunds.',
 }
 
 const faqs: FaqItem[] = [
   {
-    question: 'What is Jobkar?',
+    question: 'What is Jobkarbe?',
     answer:
-      'Jobkar brings blue-collar and entry-level job listings from public company career pages into one place — and pays you for spreading the word. Every account gets a referral code that earns you a commission when someone buys a premium plan with it.',
+      'Jobkarbe brings blue-collar and entry-level job listings from public company career pages into one place, and pays you for spreading the word. Every account gets a referral code that earns you a commission when someone buys a premium plan with it.',
   },
   {
     question: 'Do I need an account to browse jobs?',
@@ -23,7 +23,7 @@ const faqs: FaqItem[] = [
   {
     question: 'What does a premium plan unlock?',
     answer:
-      'Premium unlocks the apply button and contact details for premium listings (the ones marked with a crown) — including direct HR contacts, salary details where employers share them, and the full description. Free listings always stay free to apply to.',
+      'Premium unlocks the apply button and contact details for premium listings (the ones marked with a crown), including direct HR contacts, salary details where employers share them, and the full description. Free listings always stay free to apply to.',
   },
   {
     question: 'How much do premium plans cost?',
@@ -33,7 +33,7 @@ const faqs: FaqItem[] = [
   {
     question: 'How does the referral program work?',
     answer:
-      'Every account gets a unique referral code, shown in your Referral Dashboard. When someone signs up and buys a premium plan using your code, you earn a commission: 20% on Weekly and Monthly plans, and 25% on the Lifetime plan. Earnings depend on purchases made with your code — they are not guaranteed income.',
+      'Every account gets a unique referral code, shown in your Referral Dashboard. When someone signs up and buys a premium plan using your code, you earn a commission: 20% on Weekly and Monthly plans, and 25% on the Lifetime plan. Earnings depend on purchases made with your code and are not guaranteed income.',
   },
   {
     question: 'When can I withdraw my referral earnings?',
@@ -43,12 +43,12 @@ const faqs: FaqItem[] = [
   {
     question: 'How do I pay for a premium plan?',
     answer:
-      'Payments are processed securely through Dodo Payments — UPI, cards, net banking, and popular wallets are all supported. You complete the payment on a secure hosted checkout page and are brought back to Jobkar.',
+      'Payments are processed securely through Dodo Payments. UPI, cards, net banking, and popular wallets are all supported. You complete the payment on a secure hosted checkout page and are brought back to Jobkarbe.',
   },
   {
     question: 'Are refunds available?',
     answer:
-      'Premium access is delivered instantly, but we do refund: a wrong or duplicate charge, a payment where premium access was never unlocked, or a technical defect that prevents access you paid for. Requests are reviewed within 48 hours and refunded within 5–7 working days to your original payment method. Email jobkarsupport@gmail.com or use our grievance page.',
+      'Premium access is delivered instantly, but we do refund: a wrong or duplicate charge, a payment where premium access was never unlocked, or a technical defect that prevents access you paid for. Requests are reviewed within 48 hours and refunded within 5 to 7 working days to your original payment method. Email support@jobkarbe.in or use our grievance page.',
   },
   {
     question: 'Where do the job listings come from?',
@@ -56,24 +56,24 @@ const faqs: FaqItem[] = [
       'Listings are aggregated from publicly available company career pages and public job boards. Details can change or expire, so always double-check the role on the company\u2019s official site before applying.',
   },
   {
-    question: 'Is Jobkar the employer for any of these jobs?',
+    question: 'Is Jobkarbe the employer for any of these jobs?',
     answer:
-      'No. Jobkar is not the employer for any role displayed on the site. We surface listings from across the web — hiring decisions are made entirely by the companies themselves.',
+      'No. Jobkarbe is not the employer for any role displayed on the site. We surface listings from across the web, and hiring decisions are made entirely by the companies themselves.',
   },
   {
     question: 'How do I delete my account or my data?',
     answer:
-      'Email jobkarsupport@gmail.com from your registered address and we will remove your account and personal data from our systems. We respond within 30 days.',
+      'Email support@jobkarbe.in from your registered address and we will remove your account and personal data from our systems. We respond within 30 days.',
   },
   {
     question: 'Do I pay to apply for jobs?',
     answer:
-      'No. The premium fee covers access to platform features — never a job application. Applying to any job is free once you can see its details, and legitimate employers never ask candidates for money.',
+      'No. The premium fee covers access to platform features, never a job application. Applying to any job is free once you can see its details, and legitimate employers never ask candidates for money.',
   },
   {
-    question: 'Is Jobkar legitimate?',
+    question: 'Is Jobkarbe legitimate?',
     answer:
-      'Yes. Jobkar charges for platform access only — never for job applications — and every listing is reviewed by our team before going live. You can see exactly who operates the service and how to raise a complaint on our grievance page.',
+      'Yes. Jobkarbe charges for platform access only, never for job applications, and every listing is reviewed by our team before going live. You can see exactly who operates the service and how to raise a complaint on our grievance page.',
   },
 ]
 
@@ -82,7 +82,7 @@ export default function FaqPage() {
     <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
       <PageHeader
         title="Frequently Asked Questions"
-        subtitle="Everything people usually ask about Jobkar — jobs, plans, and referral rewards."
+        subtitle="Everything people usually ask about Jobkarbe: jobs, plans, and referral rewards."
       />
 
       <FaqAccordion items={faqs} />
@@ -90,7 +90,7 @@ export default function FaqPage() {
       <div className="mt-10 bg-primary-50 border border-primary-100 rounded-xl p-6 text-center">
         <h2 className="text-lg font-semibold text-gray-900">Still have a question?</h2>
         <p className="mt-2 text-gray-600">
-          We usually reply within 24–48 hours.
+          We usually reply within 24 to 48 hours.
         </p>
         <Link
           href="/contact"

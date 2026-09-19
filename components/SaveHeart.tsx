@@ -42,7 +42,7 @@ export default function SaveHeart({
       disabled={!ready}
       aria-pressed={saved}
       aria-label={saved ? 'Remove from saved jobs' : 'Save this job'}
-      title={saved ? 'Saved — click to remove' : 'Save this job'}
+      title={saved ? 'Saved. Click to remove' : 'Save this job'}
       className={`inline-flex items-center justify-center p-2 rounded-full bg-white/95 border shadow-sm transition-colors ${
         saved ? 'border-red-200 text-red-500' : 'border-gray-200 text-gray-400 hover:text-red-400'
       }`}

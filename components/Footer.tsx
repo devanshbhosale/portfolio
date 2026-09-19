@@ -9,9 +9,9 @@ export default function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Zap size={24} className="text-primary-500" />
-              <span className="text-xl font-bold text-white font-display">Jobkar</span>
+              <span className="text-xl font-bold text-white font-display">Jobkarbe</span>
             </div>
-            <p className="text-sm">Premium blue‑collar job listings with referral rewards.</p>
+            <p className="text-sm">Premium blue-collar job listings with referral rewards.</p>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-3">Quick Links</h4>
@@ -44,9 +44,9 @@ export default function Footer() {
         </div>
         <div className="border-t border-navy-900 mt-8 pt-6 text-center text-sm">
           <p>
-            Operated by operatorOP, Mumbai, Maharashtra · jobkarsupport@gmail.com
+            Operated by operatorOP, Mumbai, Maharashtra · support@jobkarbe.in
           </p>
-          <p className="mt-2">© {new Date().getFullYear()} Jobkar. All rights reserved.</p>
+          <p className="mt-2">© {new Date().getFullYear()} Jobkarbe. All rights reserved.</p>
         </div>
       </div>
     </footer>

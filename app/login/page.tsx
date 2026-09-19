@@ -65,7 +65,7 @@ function LoginForm() {
         <div className="text-center mb-8">
           <Zap size={32} className="mx-auto text-primary-600" aria-hidden />
           <h1 className="mt-3 text-3xl font-bold text-gray-900">Welcome back</h1>
-          <p className="mt-2 text-gray-600">Log in to Jobkar</p>
+          <p className="mt-2 text-gray-600">Log in to Jobkarbe</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4" noValidate>
@@ -105,7 +105,7 @@ function LoginForm() {
           <Link href="/privacy" className="underline hover:text-primary-600">Privacy Policy</Link>.
         </p>
         <p className="mt-6 text-center text-xs text-gray-400">
-          Operator accounts (for managing listings) are created by the site owner — jobseeker signup is public.
+          Operator accounts (for managing listings) are created by the site owner. Jobseeker signup is public.
         </p>
       </div>
     </div>

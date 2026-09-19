@@ -53,7 +53,7 @@ export const DEFAULT_FEATURED_DAYS = 7
 export const PLAN_TAGLINES: Record<PlanName, string> = {
   Weekly: 'Perfect for an active job hunt week',
   Monthly: 'Full month of unlimited premium access',
-  Lifetime: 'Pay once — premium forever',
+  Lifetime: 'Pay once, premium forever',
 }
 
 /** Billing note under each price (jobs24x-style "total billed" line). */

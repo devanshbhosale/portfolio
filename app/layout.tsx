@@ -11,17 +11,17 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const poppins = Poppins({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-poppins' })
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jobkarbe.vercel.app'
-const TITLE = 'Jobkar — Find Verified Jobs Near You'
+const TITLE = 'Jobkarbe | Find Verified Jobs Near You'
 const DESCRIPTION =
   'Verified blue-collar job listings across India. Browse free and apply directly.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: TITLE, template: '%s | Jobkar' },
+  title: { default: TITLE, template: '%s | Jobkarbe' },
   description: DESCRIPTION,
   openGraph: {
     type: 'website',
-    siteName: 'Jobkar',
+    siteName: 'Jobkarbe',
     title: TITLE,
     description: DESCRIPTION,
     url: SITE_URL,

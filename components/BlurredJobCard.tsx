@@ -56,7 +56,7 @@ export default function BlurredJobCard({ job, index = 0, unlockFrom, onLockClick
       <button
         className="absolute inset-0 flex items-center justify-center rounded-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
         onClick={lock}
-        aria-label={`Unlock premium job: ${job.title_prefix}… — ${cta}`}
+        aria-label={`Unlock premium job: ${job.title_prefix}… (${cta})`}
       >
         <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent-500 group-hover:bg-accent-600 text-white rounded-full text-sm font-semibold shadow-sm transition-colors">
           <Lock size={14} aria-hidden /> {cta}

@@ -41,7 +41,7 @@ export default function ProfilePage() {
               {user.premium ? (
                 <>
                   <Crown size={14} className="text-amber-500" aria-hidden />
-                  Active until {user.premiumExpiresAt ? new Date(user.premiumExpiresAt).toLocaleDateString() : '—'}
+                  Active until {user.premiumExpiresAt ? new Date(user.premiumExpiresAt).toLocaleDateString() : ''}
                 </>
               ) : (
                 <Link href="/pricing" className="text-primary-600 hover:text-primary-700">Upgrade</Link>
@@ -50,7 +50,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-gray-500">Bank account</dt>
-            <dd className="font-medium">{user.bankConnected ? 'Connected' : 'Not connected — add it from your referral dashboard'}</dd>
+            <dd className="font-medium">{user.bankConnected ? 'Connected' : 'Not connected, add it from your referral dashboard'}</dd>
           </div>
         </dl>
       </div>

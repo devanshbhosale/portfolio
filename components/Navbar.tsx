@@ -41,7 +41,7 @@ export default function Navbar() {
             <Zap size={28} strokeWidth={2.5} aria-hidden />
           </motion.span>
           <span className="text-2xl font-extrabold tracking-tighter text-white font-display">
-            Job<span className="text-primary-500">kar</span>
+            Job<span className="text-primary-500">karbe</span>
           </span>
         </Link>
 

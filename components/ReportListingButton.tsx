@@ -15,7 +15,7 @@ const REASON_LABELS: Record<(typeof REPORT_REASONS)[number], string> = {
   other: 'Something else',
 }
 
-const SUPPORT_EMAIL = 'jobkarsupport@gmail.com'
+const SUPPORT_EMAIL = 'support@jobkarbe.in'
 
 /** Report-this-listing control: modal for signed-in users (POST /api/reports),
  *  mailto fallback for signed-out visitors. Operator sees reports in the
@@ -99,7 +99,7 @@ export default function ReportListingButton({ jobId, jobTitle }: { jobId: string
                   <Flag size={24} className="text-primary-600" aria-hidden />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">Report this listing</h3>
-                <p className="text-sm text-gray-500 mt-1">Tell us what is wrong — we review reports within 36 hours.</p>
+                <p className="text-sm text-gray-500 mt-1">Tell us what is wrong. We review reports within 36 hours.</p>
               </div>
               {sent ? (
                 <div className="text-center">

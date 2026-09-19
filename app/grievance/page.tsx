@@ -4,19 +4,19 @@ import { Mail, Clock, ShieldCheck } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 
 export const metadata: Metadata = {
-  title: 'Grievance Redressal — Jobkar',
+  title: 'Grievance Redressal',
   description:
-    'How to raise a grievance with Jobkar: the grievance officer, the process, response times, and escalation.',
+    'How to raise a grievance with Jobkarbe: the grievance officer, the process, response times, and escalation.',
 }
 
-const SUPPORT_EMAIL = 'jobkarsupport@gmail.com'
+const SUPPORT_EMAIL = 'support@jobkarbe.in'
 
 export default function GrievancePage() {
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
       <PageHeader
         title="Grievance Redressal"
-        subtitle="Not happy with something on Jobkar? Here is exactly how we handle it."
+        subtitle="Not happy with something on Jobkarbe? Here is exactly how we handle it."
       />
 
       {/* Officer + SLA */}
@@ -88,7 +88,7 @@ export default function GrievancePage() {
         <section>
           <h2 className="text-xl font-semibold text-gray-900">Your other rights</h2>
           <p className="mt-3 text-gray-600">
-            Nothing on this page limits your rights under the Consumer Protection Act, 2019 —
+            Nothing on this page limits your rights under the Consumer Protection Act, 2019,
             including approaching a consumer forum or the National Consumer Helpline (1915).
           </p>
         </section>

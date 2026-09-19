@@ -24,18 +24,18 @@ async function getJob(id: string) {
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const job = await getJob(params.id)
-  if (!job) return { title: 'Job not found — Jobkar' }
+  if (!job) return { title: 'Job not found' }
   // Locked premium rows are redacted everywhere — meta tags included. The
   // full title/company/description must never leak into view-source.
   const view = redactJob(job, isPremiumActive(await getAuthedProfile()))
   if (isTeaser(view)) {
     return {
-      title: `${view.title_prefix}… — Premium Job | Jobkar`,
-      description: 'This premium listing is available to Jobkar Premium members.',
+      title: `${view.title_prefix}… Premium Job`,
+      description: 'This premium listing is available to Jobkarbe Premium members.',
     }
   }
   return {
-    title: `${job.title} at ${job.company} — Jobkar`,
+    title: `${job.title} at ${job.company}`,
     description: (job.description ?? `${job.title} role in ${job.location ?? 'India'}`).slice(0, 160),
   }
 }
@@ -141,7 +141,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                 <>
                   <ApplyButton jobId={job.id} href={safeApplyUrl} />
                   <p className="mt-2 text-xs text-gray-500">
-                    Legitimate employers never ask for money. Jobkar charges only for platform access.
+                    Legitimate employers never ask for money. Jobkarbe charges only for platform access.
                   </p>
                 </>
               )}

@@ -40,7 +40,7 @@ export default function PricingCard({ plan, badge, highlighted = false, onSelect
         <span className="text-5xl font-extrabold text-gray-900">₹{plan.price.toLocaleString('en-IN')}</span>
       </div>
       <span className="mt-2 inline-flex w-fit items-center rounded-full bg-navy-50 px-3 py-0.5 text-xs font-semibold text-navy-700">
-        Launch price — increases as Jobkar grows
+        Launch price, increases as Jobkarbe grows
       </span>
       <p className="mt-4 text-sm font-medium text-primary-600">{plan.billingNote}</p>
       <p className="mt-1 text-sm text-gray-500">{plan.tagline}</p>

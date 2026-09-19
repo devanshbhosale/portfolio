@@ -33,7 +33,7 @@ export function buildJobPostingLd(job: PublicJob, url: string): Record<string, u
         addressCountry: 'IN',
       },
     },
-    identifier: { '@type': 'PropertyValue', name: 'Jobkar', value: job.id },
+    identifier: { '@type': 'PropertyValue', name: 'Jobkarbe', value: job.id },
     url,
   }
   if (employmentType.length > 0) ld.employmentType = employmentType

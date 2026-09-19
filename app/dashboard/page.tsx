@@ -27,7 +27,7 @@ function statusLabel(p: PremiumPurchaseRow, now: number): string {
   if (p.commission_status === 'pending') {
     return now - new Date(p.created_at).getTime() >= 15 * 60 * 1000 ? 'available' : 'holding'
   }
-  return p.commission_status === 'none' ? '—' : p.commission_status
+  return p.commission_status === 'none' ? 'None' : p.commission_status
 }
 
 export default function ReferralDashboard() {
@@ -96,14 +96,14 @@ export default function ReferralDashboard() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      toast('Could not copy — long-press to select the code', 'error')
+      toast('Could not copy. Long-press to select the code', 'error')
     }
   }
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-900">Your Referral Dashboard</h1>
-      <p className="mt-2 text-gray-600">Earn 20%+ commission on every premium plan purchased with your code. Earnings depend on purchases made with your code — not guaranteed income.</p>
+      <p className="mt-2 text-gray-600">Earn 20%+ commission on every premium plan purchased with your code. Earnings depend on purchases made with your code and are not guaranteed income.</p>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

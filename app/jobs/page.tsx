@@ -28,13 +28,13 @@ const TIER_OPTIONS: { value: Tier; label: string; icon?: 'heart' }[] = [
 
 const SALARY_OPTIONS = [
   { value: 'under20k', label: 'Under ₹20k' },
-  { value: 'to35k', label: '₹20k – ₹35k' },
+  { value: 'to35k', label: '₹20k to ₹35k' },
   { value: 'over35k', label: '₹35k+' },
 ] as const
 const EXP_OPTIONS = [
   { value: 'fresher', label: 'Fresher' },
-  { value: 'oneToTwo', label: '0–2 years' },
-  { value: 'twoToFive', label: '2–5 years' },
+  { value: 'oneToTwo', label: '0 to 2 years' },
+  { value: 'twoToFive', label: '2 to 5 years' },
   { value: 'fivePlus', label: '5+ years' },
 ] as const
 const POSTED_OPTIONS = [
@@ -237,7 +237,7 @@ export default function JobsPage() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-900">Browse Jobs</h1>
-      <p className="mt-2 text-gray-600">Find your next opportunity in blue‑collar roles</p>
+      <p className="mt-2 text-gray-600">Find your next opportunity in blue-collar roles</p>
 
       <div className="mt-6 flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
@@ -484,7 +484,7 @@ export default function JobsPage() {
           {filteredJobs.length === 0 && (
             <div className="text-center py-16 text-gray-500">
               {filters.tier === 'saved' ? (
-                'No saved jobs yet — tap the ♥ on any listing to keep it here.'
+                'No saved jobs yet. Tap the ♥ on any listing to keep it here.'
               ) : (
                 <>
                   <p>No jobs found. Try adjusting filters.</p>

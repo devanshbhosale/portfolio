@@ -90,7 +90,7 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
               <h3 className="text-xl font-bold text-gray-900">Connect Bank Account</h3>
               <p className="text-sm text-gray-500 mt-1">Enter your bank details for withdrawals.</p>
               <p className="mt-1 text-xs text-gray-500">
-                Used only to send your payouts and for tax reporting — never shared.{' '}
+                Used only to send your payouts and for tax reporting, never shared.{' '}
                 <Link href="/privacy" className="underline hover:text-primary-600">Privacy Policy</Link>
               </p>
             </div>

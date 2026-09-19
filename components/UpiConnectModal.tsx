@@ -70,7 +70,7 @@ export default function UpiConnectModal({ isOpen, onClose, onSuccess }: UpiConne
               <h3 className="text-xl font-bold text-gray-900">Add UPI ID</h3>
               <p className="text-sm text-gray-500 mt-1">Get referral payouts sent straight to your UPI ID.</p>
               <p className="mt-1 text-xs text-gray-500">
-                Used only to send your payouts — never shared.{' '}
+                Used only to send your payouts, never shared.{' '}
                 <Link href="/privacy" className="underline hover:text-primary-600">Privacy Policy</Link>
               </p>
             </div>

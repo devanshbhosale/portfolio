@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 
-export const alt = 'Jobkar — Find Verified Jobs Near You'
+export const alt = 'Jobkarbe | Find Verified Jobs Near You'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 // Prerendering trips a Windows-only fileURLToPath bug in @vercel/og (paths
@@ -44,7 +44,7 @@ export default function OpengraphImage() {
           />
         ))}
         <div style={{ display: 'flex', fontSize: 120, fontWeight: 800, color: '#FFFFFF' }}>
-          Job<span style={{ color: '#3B82F6' }}>kar</span>
+          Job<span style={{ color: '#3B82F6' }}>karbe</span>
         </div>
         <div style={{ width: 160, height: 8, borderRadius: 9999, background: '#1D4ED8', marginTop: 24 }} />
         <div style={{ display: 'flex', fontSize: 40, color: '#E3EAF2', marginTop: 28 }}>

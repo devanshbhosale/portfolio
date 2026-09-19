@@ -50,7 +50,7 @@ export default function PricingPlans({
     const paymentId = searchParams.get('payment_id')
     if (!paymentId || !user || pollingPaymentId === paymentId) return
     setPollingPaymentId(paymentId)
-    toast('Payment received — confirming your premium access…')
+    toast('Payment received. Confirming your premium access…')
     router.replace('/pricing', { scroll: false })
     ;(async () => {
       for (let attempt = 0; attempt < 10; attempt++) {
@@ -74,7 +74,7 @@ export default function PricingPlans({
           // keep polling
         }
       }
-      toast('Payment is processing. Premium activates within a few minutes — if not, contact jobkarsupport@gmail.com', 'error')
+      toast('Payment is processing. Premium activates within a few minutes. If it does not, contact support@jobkarbe.in', 'error')
       setPollingPaymentId(null)
     })()
   }, [searchParams, user, pollingPaymentId, toast, refreshProfile, router])
@@ -137,7 +137,7 @@ export default function PricingPlans({
             transition={{ delay: 0.1 }}
             className="mt-4 mx-auto max-w-2xl text-lg text-gray-600"
           >
-            Upgrade once and unlock every premium listing — hidden jobs, salary details where employers share them, and direct apply links.
+            Upgrade once and unlock every premium listing: hidden jobs, salary details where employers share them, and direct apply links.
           </motion.p>
           <motion.p
             initial={{ opacity: 0 }}
@@ -162,7 +162,7 @@ export default function PricingPlans({
               <Crown className="text-green-600 shrink-0" size={20} aria-hidden />
               <p className="text-sm text-green-900">
                 Premium active until <strong>{new Date(activePremiumUntil).toLocaleDateString()}</strong>. Buying
-                again extends from that date — you never lose days.
+                again extends from that date, so you never lose days.
               </p>
             </div>
           )}
@@ -208,14 +208,14 @@ export default function PricingPlans({
           ))}
         </ul>
         <p className="mt-10 text-center text-sm text-gray-500">
-          Browsing Jobkar is always free. A subscription unlocks the details behind premium listings — apply links,
+          Browsing Jobkarbe is always free. A subscription unlocks the details behind premium listings: apply links,
           salary data and HR contacts.
         </p>
         <p className="mt-6 mx-auto max-w-3xl text-center text-sm text-gray-500">
           Premium access is delivered instantly. We review refund requests within 48 hours and refund within
-          5–7 working days to your original payment method for: a wrong or duplicate charge, a payment where
+          5 to 7 working days to your original payment method for: a wrong or duplicate charge, a payment where
           premium access was never unlocked, or a technical defect that prevents access you paid for. To raise one,
-          email jobkarsupport@gmail.com or visit our{' '}
+          email support@jobkarbe.in or visit our{' '}
           <Link href="/grievance" className="font-medium text-primary-600 hover:text-primary-700 underline">grievance page</Link>.
         </p>
       </section>
@@ -230,7 +230,7 @@ export default function PricingPlans({
           >
             <h3 className="text-xl font-bold">Complete Your Purchase</h3>
             <p className="mt-2 text-gray-600">
-              Selected plan: <strong>{selectedPlan}</strong> — ₹{plans.find((p) => p.name === selectedPlan)?.price.toLocaleString('en-IN')}
+              Selected plan: <strong>{selectedPlan}</strong> at ₹{plans.find((p) => p.name === selectedPlan)?.price.toLocaleString('en-IN')}
             </p>
             <div className="mt-4">
               <label htmlFor="referral" className="block text-sm font-medium text-gray-700">Referral code (optional)</label>

@@ -4,12 +4,12 @@ import { Briefcase, Clock, Mail } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 
 export const metadata: Metadata = {
-  title: 'Contact Us — Jobkar',
+  title: 'Contact Us',
   description:
-    'Reach the Jobkar team by email for help with job listings, premium plans, referral rewards, or anything else.',
+    'Reach the Jobkarbe team by email for help with job listings, premium plans, referral rewards, or anything else.',
 }
 
-const SUPPORT_EMAIL = 'jobkarsupport@gmail.com'
+const SUPPORT_EMAIL = 'support@jobkarbe.in'
 
 export default function ContactPage() {
   return (
@@ -36,13 +36,13 @@ export default function ContactPage() {
           {SUPPORT_EMAIL}
         </a>
         <p className="mt-3 flex items-center justify-center gap-2 text-sm text-gray-500">
-          <Clock size={16} aria-hidden /> We typically reply within 24–48 hours.
+          <Clock size={16} aria-hidden /> We typically reply within 24 to 48 hours.
         </p>
 
         <div className="border-t border-gray-100 mt-6 pt-6">
           <h3 className="font-semibold text-gray-900">To help us resolve your issue faster, include:</h3>
           <ul className="mt-3 list-disc pl-6 space-y-2 text-gray-600">
-            <li>The email address on your Jobkar account, if you have one</li>
+            <li>The email address on your Jobkarbe account, if you have one</li>
             <li>The job title or link, if your question is about a specific listing</li>
             <li>What happened, including any error message you saw</li>
           </ul>
@@ -56,8 +56,8 @@ export default function ContactPage() {
             <h3 className="font-semibold text-gray-900">Job providers</h3>
           </div>
           <p className="mt-3 text-gray-600">
-            Want to list your openings on Jobkar? Email us with your company name and the roles
-            you&apos;re hiring for — we&apos;ll take it from there.
+            Want to list your openings on Jobkarbe? Email us with your company name and the roles
+            you&apos;re hiring for, and we&apos;ll take it from there.
           </p>
         </div>
       </div>
