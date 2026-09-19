@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { adminClient } from '@/lib/server'
-import { dodoWebhookSignatureValid, type DodoPayment } from '@/lib/dodo'
+import { dodo, dodoWebhookSignatureValid, type DodoPayment } from '@/lib/dodo'
 import { FULFILLABLE_PLAN_NAMES } from '@/lib/plans'
 
 interface WebhookPayload {
@@ -43,11 +43,23 @@ export async function POST(req: Request) {
         return NextResponse.json({ received: true })
       }
 
-      const notes = payment.metadata ?? {}
+      let notes = payment.metadata ?? {}
+      if (!notes.userId || !notes.plan) {
+        // Dodo's webhook payload may omit the checkout metadata that the
+        // GET /payments object carries — hydrate from the API before giving
+        // up. The payment_id arrived signature-verified, so the fetch is
+        // authenticated; no trust is granted to the raw payload's shape.
+        try {
+          const fresh = await dodo<DodoPayment>(`/payments/${payment.payment_id}`)
+          notes = fresh.metadata ?? {}
+        } catch (err) {
+          console.error(`[dodo-webhook] metadata hydration failed for ${payment.payment_id}:`, err)
+        }
+      }
       const { userId, plan } = notes
       if (!userId || !plan) {
-        // No attribution → cannot fulfill. Retry until Dodo's retries are
-        // drained, then it shows in Dodo's webhook logs for manual replay.
+        // Still no attribution → cannot fulfill. Retry until Dodo's retries
+        // drain, then it shows in Dodo's webhook logs for manual replay.
         console.error(`[dodo-webhook] payment ${payment.payment_id} succeeded without userId/plan metadata`)
         return NextResponse.json({ error: 'Missing attribution, retrying' }, { status: 500 })
       }
