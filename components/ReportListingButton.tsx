@@ -15,7 +15,7 @@ const REASON_LABELS: Record<(typeof REPORT_REASONS)[number], string> = {
   other: 'Something else',
 }
 
-const SUPPORT_EMAIL = 'support@jobkarbe.in'
+const SUPPORT_EMAIL = 'jobkarbe@gmail.com'
 
 /** Report-this-listing control: modal for signed-in users (POST /api/reports),
  *  mailto fallback for signed-out visitors. Operator sees reports in the

@@ -29,7 +29,7 @@ const sections: Section[] = [
   {
     heading: '3. Accounts',
     paragraphs: [
-      'You are responsible for keeping your login credentials secure and for all activity that happens on your account. If you suspect unauthorized access to your account, report it to us immediately at support@jobkarbe.in.',
+      'You are responsible for keeping your login credentials secure and for all activity that happens on your account. If you suspect unauthorized access to your account, report it to us immediately at jobkarbe@gmail.com.',
     ],
   },
   {
@@ -52,7 +52,7 @@ const sections: Section[] = [
     heading: '6. Job content',
     paragraphs: [
       'Job listings on Jobkarbe are aggregated from publicly available company career pages and public job boards. We do not guarantee the accuracy, availability, or status of any listing, so always verify a role on the official company site before applying. Jobkarbe is not the employer for any role displayed on the site.',
-      'If a listing looks wrong (a scam, expired, asking for money, or discriminatory), use the Report this listing control on the job page or email support@jobkarbe.in. We review reports and act on valid ones within 36 hours.',
+      'If a listing looks wrong (a scam, expired, asking for money, or discriminatory), use the Report this listing control on the job page or email jobkarbe@gmail.com. We review reports and act on valid ones within 36 hours.',
     ],
   },
   {
@@ -97,10 +97,10 @@ export default function TermsPage() {
       <p className="mt-10 border-t border-gray-200 pt-6 text-sm text-gray-500 text-center">
         Questions about these terms? Email us at{' '}
         <a
-          href="mailto:support@jobkarbe.in"
+          href="mailto:jobkarbe@gmail.com"
           className="font-semibold text-primary-600 hover:text-primary-700"
         >
-          support@jobkarbe.in
+          jobkarbe@gmail.com
         </a>
         {' '}or visit the{' '}
         <a href="/grievance" className="font-semibold text-primary-600 hover:text-primary-700">

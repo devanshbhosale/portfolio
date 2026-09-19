@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     'Reach the Jobkarbe team by email for help with job listings, premium plans, referral rewards, or anything else.',
 }
 
-const SUPPORT_EMAIL = 'support@jobkarbe.in'
+const SUPPORT_EMAIL = 'jobkarbe@gmail.com'
 
 export default function ContactPage() {
   return (

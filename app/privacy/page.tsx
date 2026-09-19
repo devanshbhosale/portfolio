@@ -29,7 +29,7 @@ const sections: Section[] = [
   {
     heading: '3. Job data',
     paragraphs: [
-      'Every job listing on Jobkarbe originates from publicly accessible company career pages and public job boards. We do not scrape gated or private content. If you are an employer or HR contact and want your listing or contact details removed, email the grievance officer at support@jobkarbe.in and we will act on it within 48 hours.',
+      'Every job listing on Jobkarbe originates from publicly accessible company career pages and public job boards. We do not scrape gated or private content. If you are an employer or HR contact and want your listing or contact details removed, email the grievance officer at jobkarbe@gmail.com and we will act on it within 48 hours.',
     ],
   },
   {
@@ -67,14 +67,14 @@ const sections: Section[] = [
   {
     heading: '9. Your rights',
     paragraphs: [
-      'You can request a copy of your data, ask for corrections, or delete your account at any time by emailing support@jobkarbe.in from your registered address. We respond within 30 days.',
+      'You can request a copy of your data, ask for corrections, or delete your account at any time by emailing jobkarbe@gmail.com from your registered address. We respond within 30 days.',
       'If you agreed to something you no longer want to agree to, such as marketing emails, tell us in the same email and we will withdraw it for you.',
     ],
   },
   {
     heading: '10. Contact',
     paragraphs: [
-      'For any privacy-related question, reach the grievance officer at support@jobkarbe.in.',
+      'For any privacy-related question, reach the grievance officer at jobkarbe@gmail.com.',
     ],
   },
 ]
@@ -100,10 +100,10 @@ export default function PrivacyPage() {
       <p className="mt-10 border-t border-gray-200 pt-6 text-sm text-gray-500 text-center">
         Questions about this policy? Email us at{' '}
         <a
-          href="mailto:support@jobkarbe.in"
+          href="mailto:jobkarbe@gmail.com"
           className="font-semibold text-primary-600 hover:text-primary-700"
         >
-          support@jobkarbe.in
+          jobkarbe@gmail.com
         </a>
         {' '}or visit the{' '}
         <a href="/grievance" className="font-semibold text-primary-600 hover:text-primary-700">

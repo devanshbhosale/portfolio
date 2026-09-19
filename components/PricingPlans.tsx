@@ -74,7 +74,7 @@ export default function PricingPlans({
           // keep polling
         }
       }
-      toast('Payment is processing. Premium activates within a few minutes. If it does not, contact support@jobkarbe.in', 'error')
+      toast('Payment is processing. Premium activates within a few minutes. If it does not, contact jobkarbe@gmail.com', 'error')
       setPollingPaymentId(null)
     })()
   }, [searchParams, user, pollingPaymentId, toast, refreshProfile, router])
@@ -215,7 +215,7 @@ export default function PricingPlans({
           Premium access is delivered instantly. We review refund requests within 48 hours and refund within
           5 to 7 working days to your original payment method for: a wrong or duplicate charge, a payment where
           premium access was never unlocked, or a technical defect that prevents access you paid for. To raise one,
-          email support@jobkarbe.in or visit our{' '}
+          email jobkarbe@gmail.com or visit our{' '}
           <Link href="/grievance" className="font-medium text-primary-600 hover:text-primary-700 underline">grievance page</Link>.
         </p>
       </section>

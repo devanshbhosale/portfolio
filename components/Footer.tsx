@@ -44,7 +44,7 @@ export default function Footer() {
         </div>
         <div className="border-t border-navy-900 mt-8 pt-6 text-center text-sm">
           <p>
-            Operated by operatorOP, Mumbai, Maharashtra · support@jobkarbe.in
+            Operated by operatorOP, Mumbai, Maharashtra · jobkarbe@gmail.com
           </p>
           <p className="mt-2">© {new Date().getFullYear()} Jobkarbe. All rights reserved.</p>
         </div>

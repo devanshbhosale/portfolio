@@ -48,7 +48,7 @@ const faqs: FaqItem[] = [
   {
     question: 'Are refunds available?',
     answer:
-      'Premium access is delivered instantly, but we do refund: a wrong or duplicate charge, a payment where premium access was never unlocked, or a technical defect that prevents access you paid for. Requests are reviewed within 48 hours and refunded within 5 to 7 working days to your original payment method. Email support@jobkarbe.in or use our grievance page.',
+      'Premium access is delivered instantly, but we do refund: a wrong or duplicate charge, a payment where premium access was never unlocked, or a technical defect that prevents access you paid for. Requests are reviewed within 48 hours and refunded within 5 to 7 working days to your original payment method. Email jobkarbe@gmail.com or use our grievance page.',
   },
   {
     question: 'Where do the job listings come from?',
@@ -63,7 +63,7 @@ const faqs: FaqItem[] = [
   {
     question: 'How do I delete my account or my data?',
     answer:
-      'Email support@jobkarbe.in from your registered address and we will remove your account and personal data from our systems. We respond within 30 days.',
+      'Email jobkarbe@gmail.com from your registered address and we will remove your account and personal data from our systems. We respond within 30 days.',
   },
   {
     question: 'Do I pay to apply for jobs?',

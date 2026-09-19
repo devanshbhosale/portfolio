@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     'How to raise a grievance with Jobkarbe: the grievance officer, the process, response times, and escalation.',
 }
 
-const SUPPORT_EMAIL = 'support@jobkarbe.in'
+const SUPPORT_EMAIL = 'jobkarbe@gmail.com'
 
 export default function GrievancePage() {
   return (
