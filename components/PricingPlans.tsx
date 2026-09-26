@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -42,14 +42,15 @@ export default function PricingPlans({
   const [referralCode, setReferralCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pollingPaymentId, setPollingPaymentId] = useState<string | null>(null)
+  // Dedupe guard for the payment-verify poller — never rendered, so a ref.
+  const pollingRef = useRef<string | null>(null)
 
   // Dodo redirects back to /pricing?payment_id=…&status=… after checkout.
   // Poll verify-payment until the webhook lands (≤30s), then refresh.
   useEffect(() => {
     const paymentId = searchParams.get('payment_id')
-    if (!paymentId || !user || pollingPaymentId === paymentId) return
-    setPollingPaymentId(paymentId)
+    if (!paymentId || !user || pollingRef.current === paymentId) return
+    pollingRef.current = paymentId
     toast('Payment received. Confirming your premium access…')
     router.replace('/pricing', { scroll: false })
     ;(async () => {
@@ -66,7 +67,7 @@ export default function PricingPlans({
             if (data.verified) {
               refreshProfile()
               toast('Premium activated!')
-              setPollingPaymentId(null)
+              pollingRef.current = null
               return
             }
           }
@@ -75,9 +76,9 @@ export default function PricingPlans({
         }
       }
       toast('Payment is processing. Premium activates within a few minutes. If it does not, contact jobkarbe@gmail.com', 'error')
-      setPollingPaymentId(null)
+      pollingRef.current = null
     })()
-  }, [searchParams, user, pollingPaymentId, toast, refreshProfile, router])
+  }, [searchParams, user, toast, refreshProfile, router])
 
   const handleSelect = (name: PlanName) => {
     if (!user) {

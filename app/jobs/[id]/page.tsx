@@ -10,6 +10,7 @@ import { adminClient, getAuthedProfile, isPremiumActive } from '@/lib/server'
 import { safeExternalUrl } from '@/lib/safe-url'
 import { buildJobPostingLd } from '@/lib/jobPosting'
 import { redactJob, isTeaser } from '@/lib/jobRedaction'
+import { isFeaturedNow } from '@/lib/freshness'
 import type { PublicJob } from '@/lib/database.types'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jobkarbe.vercel.app'
@@ -62,7 +63,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
     contactInfo = data?.contact_info ?? null
   }
 
-  const featured = Boolean(job.is_featured && (!job.featured_until || new Date(job.featured_until).getTime() > Date.now()))
+  const featured = isFeaturedNow(job)
   const safeSourceLink = safeExternalUrl(job.source_link)
   const safeApplyUrl = safeExternalUrl(job.apply_url)
 

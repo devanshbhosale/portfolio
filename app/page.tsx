@@ -7,6 +7,7 @@ import StatsCounter from '@/components/StatsCounter'
 import { adminClient, getAuthedProfile, isPremiumActive } from '@/lib/server'
 import { defaultSettings, getSiteSettings } from '@/lib/settings'
 import { rupees } from '@/lib/plans'
+import { weekAgoIso } from '@/lib/freshness'
 import { isTeaser, redactJob } from '@/lib/jobRedaction'
 import type { PublicJob } from '@/lib/database.types'
 
@@ -27,7 +28,7 @@ export default async function LandingPage() {
     .limit(6)
   const rows = ((latest ?? []) as PublicJob[]).map((j) => redactJob(j, unlocked))
 
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const weekAgo = weekAgoIso()
   const [all, premium, fresh] = await Promise.all([
     db.from('public_jobs').select('*', { count: 'exact', head: true }),
     db.from('public_jobs').select('*', { count: 'exact', head: true }).eq('is_premium', true),

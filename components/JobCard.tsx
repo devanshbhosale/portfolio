@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { MapPin, Briefcase, IndianRupee, Tag, Star, Crown } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { isFeaturedNow } from '@/lib/freshness'
 import type { PublicJob } from '@/lib/database.types'
 
 interface JobCardProps {
@@ -14,7 +15,7 @@ interface JobCardProps {
 }
 
 export default function JobCard({ job, index = 0, isPremium = false, action }: JobCardProps) {
-  const featured = Boolean(job.is_featured && (!job.featured_until || new Date(job.featured_until).getTime() > Date.now()))
+  const featured = isFeaturedNow(job)
 
   return (
     <motion.div

@@ -9,11 +9,11 @@ const config = [
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'react/no-unescaped-entities': 'off',
-      // New react-hooks v7 (compiler-era) rules flag pre-existing patterns in
-      // checkout-adjacent components. Warnings until those are refactored
-      // deliberately, not silenced-and-forgotten.
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/purity': 'warn',
+      // react-hooks v7 compiler-era rules. set-state-in-effect: fixed by
+      // deriving from the job-memory store / render-adjust / docs-shaped
+      // async effects. purity: clock reads isolated in lib/freshness.ts.
+      'react-hooks/set-state-in-effect': 'error',
+      'react-hooks/purity': 'error',
     },
   },
 ]

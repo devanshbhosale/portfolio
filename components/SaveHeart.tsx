@@ -1,45 +1,30 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { Heart } from 'lucide-react'
-import { savedSet, toggleSaved } from '@/lib/savedJobs'
+import { getSavedHasSnapshot, subscribeJobMemory, toggleSaved } from '@/lib/savedJobs'
 import { setSavedRemote } from '@/lib/jobMarks'
 import { useAuth } from '@/contexts/AuthContext'
 
-/** Per-browser save toggle with account sync for logged-in users.
- *  Self-reads on mount; onToggle lets the /jobs feed refresh its saved-set
- *  copy so the "Saved" tier filter stays current. */
-export default function SaveHeart({
-  jobId,
-  size = 16,
-  onToggle,
-}: {
-  jobId: string
-  size?: number
-  onToggle?: (jobId: string) => void
-}) {
+/** Per-browser save toggle with account sync for logged-in users. The saved
+ *  flag lives in localStorage read through the job-memory store: a write
+ *  here re-renders every mounted heart (and the /jobs "Saved" tier via its
+ *  own subscription) with no prop plumbing; cross-tab sync via the storage
+ *  event; false server snapshot keeps SSR/hydration consistent. */
+export default function SaveHeart({ jobId, size = 16 }: { jobId: string; size?: number }) {
   const { user } = useAuth()
-  const [saved, setSaved] = useState(false)
-  const [ready, setReady] = useState(false)
-
-  useEffect(() => {
-    setSaved(savedSet(window.localStorage).has(jobId))
-    setReady(true)
-  }, [jobId])
+  const saved = useSyncExternalStore(subscribeJobMemory, getSavedHasSnapshot(jobId), () => false)
 
   const toggle = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     const next = toggleSaved(window.localStorage, jobId)
-    setSaved(next.has(jobId))
     if (user) setSavedRemote(user.id, jobId, next.has(jobId))
-    onToggle?.(jobId)
   }
 
   return (
     <button
       type="button"
       onClick={toggle}
-      disabled={!ready}
       aria-pressed={saved}
       aria-label={saved ? 'Remove from saved jobs' : 'Save this job'}
       title={saved ? 'Saved. Click to remove' : 'Save this job'}

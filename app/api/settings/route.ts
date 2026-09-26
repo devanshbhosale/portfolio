@@ -12,7 +12,6 @@ export const dynamic = 'force-dynamic'
  *  anywhere, not even this endpoint. */
 export async function GET() {
   const settings = await getSiteSettings()
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- stripping the invented display prices from the wire
   const { mrps, ...publicSettings } = settings
   void mrps
   return NextResponse.json(publicSettings)

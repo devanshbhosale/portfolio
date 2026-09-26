@@ -10,6 +10,7 @@ import UpiConnectModal from '@/components/UpiConnectModal'
 import WithdrawalModal from '@/components/WithdrawalModal'
 import { supabase } from '@/lib/supabase'
 import { availableCommission, holdingCommission, lifetimeCommission } from '@/lib/money'
+import { nowMs } from '@/lib/freshness'
 import { DEFAULT_WITHDRAW_THRESHOLD } from '@/lib/plans'
 import type { PremiumPurchaseRow, WithdrawalSummaryRow } from '@/lib/database.types'
 
@@ -21,6 +22,26 @@ const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-800',
   approved: 'bg-green-100 text-green-800',
   rejected: 'bg-red-100 text-red-700',
+}
+
+/** One round-trip for both dashboard lists, shared by the mount effect and
+ *  post-withdrawal reloads. */
+async function fetchDashboardData(
+  userId: string,
+): Promise<{ purchases: PremiumPurchaseRow[]; withdrawals: WithdrawalSummaryRow[] }> {
+  const { data } = await supabase
+    .from('premium_purchases')
+    .select('*')
+    .eq('referrer_user_id', userId)
+    .order('created_at', { ascending: false })
+  let withdrawals: WithdrawalSummaryRow[] = []
+  try {
+    const res = await fetch('/api/withdrawals')
+    if (res.ok) withdrawals = (await res.json()) as WithdrawalSummaryRow[]
+  } catch {
+    // withdrawals list stays empty on failure; the page still works
+  }
+  return { purchases: (data as PremiumPurchaseRow[]) ?? [], withdrawals }
 }
 
 function statusLabel(p: PremiumPurchaseRow, now: number): string {
@@ -44,31 +65,33 @@ export default function ReferralDashboard() {
 
   const load = useCallback(async () => {
     if (!user) return
-    const { data: purchasesData } = await supabase
-      .from('premium_purchases')
-      .select('*')
-      .eq('referrer_user_id', user.id)
-      .order('created_at', { ascending: false })
-    setPurchases((purchasesData as PremiumPurchaseRow[]) ?? [])
+    const { purchases, withdrawals } = await fetchDashboardData(user.id)
+    setPurchases(purchases)
+    setWithdrawals(withdrawals)
+  }, [user])
 
-    try {
-      const res = await fetch('/api/withdrawals')
-      if (res.ok) setWithdrawals((await res.json()) as WithdrawalSummaryRow[])
-    } catch {
-      // withdrawals list stays empty on failure; the page still works
-    }
-
+  // Initial load in the React-documented shape: async work inside the
+  // effect, setState only after await, cancelled guard against a logout
+  // landing mid-flight. Threshold rides along (async callback).
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    ;(async () => {
+      const { purchases, withdrawals } = await fetchDashboardData(user.id)
+      if (cancelled) return
+      setPurchases(purchases)
+      setWithdrawals(withdrawals)
+    })()
     fetch('/api/settings')
       .then((r) => (r.ok ? r.json() : null))
       .then((s: { withdrawThreshold?: number } | null) => {
         if (s?.withdrawThreshold) setThreshold(s.withdrawThreshold)
       })
       .catch(() => {})
+    return () => {
+      cancelled = true
+    }
   }, [user])
-
-  useEffect(() => {
-    load()
-  }, [load])
 
   if (authLoading) {
     return <div className="py-16 text-center text-gray-500">Loading…</div>
@@ -77,7 +100,7 @@ export default function ReferralDashboard() {
     return <div className="py-16 text-center">Please log in to view your dashboard.</div>
   }
 
-  const now = Date.now()
+  const now = nowMs()
   const rows = purchases ?? []
   const available = availableCommission(rows, now)
   const holding = holdingCommission(rows, now)

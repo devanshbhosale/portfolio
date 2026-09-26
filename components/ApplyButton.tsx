@@ -1,19 +1,18 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { CheckCircle2 } from 'lucide-react'
-import { appliedSet, markApplied, savedSet } from '@/lib/savedJobs'
+import { getAppliedHasSnapshot, markApplied, savedSet, subscribeJobMemory } from '@/lib/savedJobs'
 import { markAppliedRemote } from '@/lib/jobMarks'
 import { useAuth } from '@/contexts/AuthContext'
 
 /** Apply link that records an "Applied ✓" state on click (device + account
- *  when logged in), so jobseekers can see which listings they went for. */
+ *  when logged in), so jobseekers can see which listings they went for.
+ *  The applied flag lives in localStorage read through the job-memory store:
+ *  live on this tab (write → notify) and synced cross-tab via the storage
+ *  event, with a false server snapshot so SSR/hydration stay consistent. */
 export default function ApplyButton({ jobId, href }: { jobId: string; href: string }) {
   const { user } = useAuth()
-  const [applied, setApplied] = useState(false)
-
-  useEffect(() => {
-    setApplied(appliedSet(window.localStorage).has(jobId))
-  }, [jobId])
+  const applied = useSyncExternalStore(subscribeJobMemory, getAppliedHasSnapshot(jobId), () => false)
 
   return (
     <div className="flex items-center gap-3 flex-wrap">
@@ -23,7 +22,6 @@ export default function ApplyButton({ jobId, href }: { jobId: string; href: stri
         rel="noopener noreferrer nofollow"
         onClick={() => {
           markApplied(window.localStorage, jobId)
-          setApplied(true)
           if (user) markAppliedRemote(user.id, jobId, savedSet(window.localStorage).has(jobId))
         }}
         className="inline-flex items-center justify-center rounded-lg font-semibold bg-primary-600 text-white hover:bg-primary-700 px-6 py-3 text-base transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"

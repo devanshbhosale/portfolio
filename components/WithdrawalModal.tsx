@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Wallet } from 'lucide-react'
 import Button from '@/components/ui/Button'
@@ -22,8 +22,13 @@ export default function WithdrawalModal({ isOpen, onClose, maxAmount, threshold,
   const [method, setMethod] = useState<'bank' | 'upi'>(defaultMethod)
 
   // The modal stays mounted (AnimatePresence only hides it), so the initial
-  // useState would go stale once a user connects UPI mid-session.
-  useEffect(() => { if (isOpen) setMethod(defaultMethod) }, [isOpen, defaultMethod])
+  // useState would go stale once a user connects UPI mid-session. Adjust
+  // during render (the React-documented pattern) instead of an effect.
+  const [methodSync, setMethodSync] = useState({ isOpen, defaultMethod })
+  if (methodSync.isOpen !== isOpen || methodSync.defaultMethod !== defaultMethod) {
+    setMethodSync({ isOpen, defaultMethod })
+    if (isOpen) setMethod(defaultMethod)
+  }
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 

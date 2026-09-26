@@ -1,6 +1,7 @@
 'use client'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Search, MapPin, Briefcase, AlertCircle, Heart, X } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 import JobCard from '@/components/JobCard'
 import BlurredJobCard from '@/components/BlurredJobCard'
 import PaywallModal from '@/components/PaywallModal'
@@ -16,7 +17,15 @@ import {
 import { isTeaser, type ApiJob } from '@/lib/jobRedaction'
 import { rupees } from '@/lib/plans'
 import { PAGE_SIZE, type SearchFacets } from '@/lib/jobsQuery'
-import { savedSet, toggleSaved } from '@/lib/savedJobs'
+import {
+  getEmptyRecentsSnapshot,
+  getEmptySavedSnapshot,
+  getRecentsSnapshot,
+  getSavedSnapshot,
+  readRecents,
+  subscribeJobMemory,
+  writeRecents,
+} from '@/lib/savedJobs'
 import type { PublicJob } from '@/lib/database.types'
 
 const TIER_OPTIONS: { value: Tier; label: string; icon?: 'heart' }[] = [
@@ -53,21 +62,14 @@ const EXP_LABELS = Object.fromEntries(EXP_OPTIONS.map((o) => [o.value, o.label])
 const POSTED_LABELS = Object.fromEntries(POSTED_OPTIONS.map((o) => [o.value, o.label]))
 const SORT_LABELS = Object.fromEntries(SORT_OPTIONS.map((o) => [o.value, o.label]))
 
-const RECENTS_KEY = 'jobkar:recent-searches'
-
-function readRecents(): string[] {
-  try {
-    return JSON.parse(window.localStorage.getItem(RECENTS_KEY) ?? '[]') as string[]
-  } catch {
-    return []
-  }
-}
-
 const isFullJob = (j: ApiJob): j is PublicJob => !isTeaser(j)
 
-export default function JobsPage() {
+function JobsPageContent() {
   const { user } = useAuth()
   const isPremium = Boolean(user?.premium)
+  // URL is the initial-filter source (shareable /jobs?location=Mumbai&q=…);
+  // useSearchParams is the SSR-safe store read for it.
+  const searchParams = useSearchParams()
 
   const [jobs, setJobs] = useState<ApiJob[]>([])
   const [loading, setLoading] = useState(true)
@@ -76,14 +78,17 @@ export default function JobsPage() {
   const [hasMore, setHasMore] = useState(true)
   const [paywallOpen, setPaywallOpen] = useState(false)
   const [unlockFrom, setUnlockFrom] = useState<number | null>(null)
-  const [filters, setFilters] = useState<JobFilters>(DEFAULT_FILTERS)
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
+  const [filters, setFilters] = useState<JobFilters>(() => filtersFromParams(searchParams.toString()))
+  // Saved ids + recent searches read live from localStorage through the
+  // job-memory store — heart writes elsewhere update the feed with no
+  // prop plumbing, and SSR renders the empty snapshot (hydration-safe).
+  const savedIds = useSyncExternalStore(subscribeJobMemory, getSavedSnapshot, getEmptySavedSnapshot)
+  const recents = useSyncExternalStore(subscribeJobMemory, getRecentsSnapshot, getEmptyRecentsSnapshot)
   const [tags, setTags] = useState<string[]>([])
   // Server-reported truth: match count, facet counts, did-you-mean.
   const [total, setTotal] = useState(0)
   const [facets, setFacets] = useState<SearchFacets | null>(null)
   const [suggestion, setSuggestion] = useState<string | null>(null)
-  const [recents, setRecents] = useState<string[]>([])
   const [recentsOpen, setRecentsOpen] = useState(false)
   const urlSynced = useRef(false)
   // Tier changes re-invoke load; a slower earlier response (e.g. the
@@ -124,24 +129,16 @@ export default function JobsPage() {
     // Remember successful searches (dedup, newest first, max 5). Storage can
     // be blocked (private mode) — search must keep working without it.
     if (page === 0 && replace && data.total > 0 && filters.search.trim()) {
-      try {
-        const q = filters.search.trim()
-        const next = [q, ...readRecents().filter((r) => r !== q)].slice(0, 5)
-        window.localStorage.setItem(RECENTS_KEY, JSON.stringify(next))
-        setRecents(next)
-      } catch {
-        // storage blocked — recents are a convenience, not a feature
-      }
+      const q = filters.search.trim()
+      writeRecents(window.localStorage, [q, ...readRecents(window.localStorage).filter((r) => r !== q)].slice(0, 5))
     }
     return true
   }, [filters])
 
-  // Initial state: filters from the URL (shareable /jobs?location=Mumbai&salary=under20k),
-  // saved-job ids from this browser, live tag list from the DB, recent searches local.
+  // One-shot remote lists: live tag list from the DB, locked-card CTA price
+  // from settings (focus/90s refetches don't need it; unknown stays null →
+  // the card shows plain "Unlock", never a wrong price).
   useEffect(() => {
-    setFilters(filtersFromParams(window.location.search))
-    setSavedIds(savedSet(window.localStorage))
-    setRecents(readRecents())
     supabase
       .from('public_tags')
       .select('tag')
@@ -149,8 +146,6 @@ export default function JobsPage() {
       .then(({ data }) => {
         setTags(((data ?? []) as { tag: string }[]).map((r) => r.tag).filter(Boolean))
       })
-    // Locked-card CTA price — one shot here; the focus/90s refetches don't need it.
-    // Unknown stays null → the card shows plain "Unlock" (never a wrong price).
     fetch('/api/settings')
       .then((r) => (r.ok ? r.json() : null))
       .then((s: { prices?: { Weekly?: unknown } } | null) => {
@@ -159,7 +154,6 @@ export default function JobsPage() {
       .catch(() => {
         // leave null
       })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Keep the URL in sync (replaceState — no history spam) as filters change.
@@ -200,10 +194,6 @@ export default function JobsPage() {
     setLoadingMore(true)
     await load(jobs.length / PAGE_SIZE, false)
     setLoadingMore(false)
-  }
-
-  const onHeartToggle = (jobId: string) => {
-    setSavedIds(toggleSaved(window.localStorage, jobId))
   }
 
   const filteredJobs = filterJobs(jobs, filters, savedIds)
@@ -443,7 +433,7 @@ export default function JobsPage() {
                       key={job.id}
                       job={job}
                       index={idx}
-                      action={<SaveHeart jobId={job.id} onToggle={onHeartToggle} />}
+                      action={<SaveHeart jobId={job.id} />}
                     />
                   )
                 ))}
@@ -465,7 +455,7 @@ export default function JobsPage() {
                       job={job}
                       index={idx}
                       isPremium
-                      action={<SaveHeart jobId={job.id} onToggle={onHeartToggle} />}
+                      action={<SaveHeart jobId={job.id} />}
                     />
                   ) : (
                     <BlurredJobCard
@@ -529,5 +519,23 @@ export default function JobsPage() {
 
       <PaywallModal isOpen={paywallOpen} onClose={() => setPaywallOpen(false)} />
     </div>
+  )
+}
+
+export default function JobsPage() {
+  // useSearchParams requires a Suspense boundary under static prerender;
+  // the skeleton mirrors the feed grid shape.
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-7xl mx-auto px-4 py-8 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonLoader key={i} />
+          ))}
+        </div>
+      }
+    >
+      <JobsPageContent />
+    </Suspense>
   )
 }

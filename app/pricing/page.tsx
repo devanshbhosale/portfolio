@@ -3,6 +3,7 @@ import type { PlanCard } from '@/components/PricingCard'
 import { adminClient, getAuthedProfile, isPremiumActive } from '@/lib/server'
 import { defaultSettings, getSiteSettings } from '@/lib/settings'
 import { PLAN_BILLING_NOTES, PLAN_NAMES, PLAN_TAGLINES, rupees } from '@/lib/plans'
+import { weekAgoIso } from '@/lib/freshness'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +12,7 @@ export default async function PricingPage() {
   // dashboard-editable prices/MRPs. Animated sections + Dodo hosted checkout
   // live in PricingPlans (client) — motion.* can't render from this tree.
   const db = adminClient()
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const weekAgo = weekAgoIso()
   // Marketing page must not 500 on a transient DB blip — zeros are honest
   // (real counts, momentarily zeroed) unlike invented social-proof numbers.
   let stats = { activeJobs: 0, premiumJobs: 0, freshJobs: 0 }
