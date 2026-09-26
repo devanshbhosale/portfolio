@@ -122,12 +122,16 @@ function onExternalStorage(e: StorageEvent): void {
  *  storage event). Pass to useSyncExternalStore as-is. */
 export function subscribeJobMemory(listener: () => void): () => void {
   listeners.add(listener)
-  if (typeof window !== 'undefined') {
+  // Refcount the window listener: identical function references dedupe in
+  // the DOM, so it must be added once for the FIRST subscriber and removed
+  // only when the LAST unsubscribes — otherwise one unmounting heart would
+  // kill cross-tab sync for every subscriber still on the page.
+  if (typeof window !== 'undefined' && listeners.size === 1) {
     window.addEventListener('storage', onExternalStorage)
   }
   return () => {
     listeners.delete(listener)
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && listeners.size === 0) {
       window.removeEventListener('storage', onExternalStorage)
     }
   }
