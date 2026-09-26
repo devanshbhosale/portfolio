@@ -7,7 +7,7 @@ import type { Database } from '@/lib/database.types'
 const noStoreFetch: typeof fetch = (input, init) =>
   fetch(input, { ...init, cache: 'no-store' })
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Session refresh with the current @supabase/ssr cookie pattern.

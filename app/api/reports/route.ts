@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   }
 
   // Session client + RLS insert-own policy — the same pattern as job_marks.
-  const { error } = await createRouteClient().from('reports').insert({
+  const { error } = await (await createRouteClient()).from('reports').insert({
     user_id: profile.id,
     job_id: parsed.data.jobId,
     reason: parsed.data.reason,

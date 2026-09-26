@@ -22,8 +22,9 @@ async function getJob(id: string) {
   return (data as PublicJob | null) ?? null
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const job = await getJob(params.id)
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const job = await getJob(id)
   if (!job) return { title: 'Job not found' }
   // Locked premium rows are redacted everywhere — meta tags included. The
   // full title/company/description must never leak into view-source.
@@ -40,8 +41,9 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   }
 }
 
-export default async function JobDetailPage({ params }: { params: { id: string } }) {
-  const job = await getJob(params.id)
+export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const job = await getJob(id)
   if (!job) notFound()
 
   // The lock must factor in the VIEWER: a premium subscriber never sees a

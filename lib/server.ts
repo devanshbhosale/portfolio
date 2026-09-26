@@ -18,8 +18,9 @@ const noStoreFetch: typeof fetch = (input, init) =>
 
 /** Route-handler client reading the session from cookies (the pattern the
  *  original plan got wrong: service-role clients have no session). */
-export function createRouteClient() {
-  const cookieStore = cookies()
+export async function createRouteClient() {
+  // Next 15+: cookies() is async.
+  const cookieStore = await cookies()
   return createServerClient<Database>(url!, anonKey!, {
     global: { fetch: noStoreFetch },
     cookies: {
@@ -47,7 +48,7 @@ export function adminClient(): SupabaseClient<Database> {
 
 /** Authenticated user for a route-handler request, or null. */
 export async function getAuthedUser() {
-  const { data, error } = await createRouteClient().auth.getUser()
+  const { data, error } = await (await createRouteClient()).auth.getUser()
   if (error) return null
   return data.user
 }

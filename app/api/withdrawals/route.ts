@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   // rows, validates threshold/payout-rail/balance, inserts the request.
   // MUST use the session client — request_withdrawal resolves auth.uid(),
   // which is NULL under the service-role key.
-  const { error } = await createRouteClient().rpc('request_withdrawal', {
+  const { error } = await (await createRouteClient()).rpc('request_withdrawal', {
     p_amount: amount,
     p_method: parsed.data.method,
   })
@@ -40,7 +40,7 @@ export async function GET() {
 
   // Explicit safe columns — the bank number / UPI on file are payout data,
   // never served back to the browser.
-  const { data, error } = await createRouteClient()
+  const { data, error } = await (await createRouteClient())
     .from('withdrawal_requests')
     .select('id, user_id, amount, payout_method, status, created_at, processed_at')
     .eq('user_id', profile.id)
