@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jobkarbe Brand & Logo System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070F1E;
+      --surface: #0C1A30;
+      --border: #182E50;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --primary: #3B82F6;
+      --accent: #F97316;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      padding: 48px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1120px;
+      width: 100%;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 9999px;
+      color: #60A5FA;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+    .subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 40px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .card-tag {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      color: #94A3B8;
+    }
+    .preview-stage {
+      border-radius: 14px;
+      padding: 40px 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 160px;
+      transition: background 0.2s ease;
+    }
+    .bg-dark { background: #0B1F38; border: 1px solid #163258; }
+    .bg-light { background: #FFFFFF; border: 1px solid #E2E8F0; }
+    .bg-navy { background: #071626; border: 1px solid #10263E; }
+    
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: #2563EB;
+      color: #FFF;
+    }
+    .btn-primary:hover {
+      background: #1D4ED8;
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #E2E8F0;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+    @media (max-width: 640px) {
+      .specs-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .spec-card {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .spec-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .spec-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #FFF;
+      font-weight: 500;
+    }
+    .color-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="badge">Official Brand Assets</div>
+    <h1>Jobkarbe Identity System</h1>
+    <p class="subtitle">The Kinetic JK Nexus: designed for high trust, rapid placement, and energetic career momentum.</p>
+  </header>
+
+  <!-- SECTION 1: CORE LOCKUPS -->
+  <div class="section-title">Primary Brand Lockups</div>
+  <div class="grid-2">
+
+    <!-- Dark Lockup -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Dark Mode / Navbar Lockup</span>
+        <span class="card-tag">SVG · Primary</span>
+      </div>
+      <div class="preview-stage bg-dark">
+        <img src="/logo.svg" alt="Jobkarbe Dark Logo" style="height: 48px; max-width: 100%;">
+      </div>
+      <div class="actions">
+        <a href="/logo.svg" download="jobkarbe-logo.svg" class="btn btn-primary">Download SVG</a>
+        <button onclick="navigator.clipboard.writeText('<img src=&quot;/logo.svg&quot; alt=&quot;Jobkarbe&quot; height=&quot;40&quot; />'); this.innerText='Copied HTML!';" class="btn btn-secondary">Copy HTML</button>
+      </div>
+    </div>
+
+    <!-- Light Lockup -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Light Mode Lockup</span>
+        <span class="card-tag">SVG · Secondary</span>
+      </div>
+      <div class="preview-stage bg-light">
+        <img src="/logo-light.svg" alt="Jobkarbe Light Logo" style="height: 48px; max-width: 100%;">
+      </div>
+      <div class="actions">
+        <a href="/logo-light.svg" download="jobkarbe-logo-light.svg" class="btn btn-primary">Download SVG</a>
+        <button onclick="navigator.clipboard.writeText('<img src=&quot;/logo-light.svg&quot; alt=&quot;Jobkarbe&quot; height=&quot;40&quot; />'); this.innerText='Copied HTML!';" class="btn btn-secondary">Copy HTML</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SECTION 2: STANDALONE ICON & FAVICONS -->
+  <div class="section-title">Emblem Mark & Favicon Scales</div>
+  <div class="grid-2">
+
+    <!-- Standalone Mark -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Kinetic JK App Icon / Avatar</span>
+        <span class="card-tag">512 × 512 SVG</span>
+      </div>
+      <div class="preview-stage bg-navy">
+        <img src="/logo-mark.svg" alt="Jobkarbe Mark" style="height: 110px; width: 110px;">
+      </div>
+      <div class="actions">
+        <a href="/logo-mark.svg" download="jobkarbe-mark.svg" class="btn btn-primary">Download Mark</a>
+      </div>
+    </div>
+
+    <!-- Favicon Tests -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Favicon Scale Benchmarks</span>
+        <span class="card-tag">Multi-Scale</span>
+      </div>
+      <div class="preview-stage bg-dark" style="gap: 32px;">
+        <div style="text-align: center;">
+          <img src="/favicon.svg" alt="64px" style="width: 64px; height: 64px; margin-bottom: 8px;">
+          <div style="font-size: 11px; color: var(--text-muted);">64px</div>
+        </div>
+        <div style="text-align: center;">
+          <img src="/favicon.svg" alt="32px" style="width: 32px; height: 32px; margin-bottom: 8px;">
+          <div style="font-size: 11px; color: var(--text-muted);">32px</div>
+        </div>
+        <div style="text-align: center;">
+          <img src="/favicon.svg" alt="24px" style="width: 24px; height: 24px; margin-bottom: 8px;">
+          <div style="font-size: 11px; color: var(--text-muted);">24px</div>
+        </div>
+        <div style="text-align: center;">
+          <img src="/favicon.svg" alt="16px" style="width: 16px; height: 16px; margin-bottom: 8px;">
+          <div style="font-size: 11px; color: var(--text-muted);">16px</div>
+        </div>
+      </div>
+      <div class="actions">
+        <a href="/favicon.svg" download="favicon.svg" class="btn btn-primary">Download Favicon</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SECTION 3: PALETTE SPECIFICATION -->
+  <div class="section-title">Color Palette Architecture</div>
+  <div class="specs-grid">
+    <div class="spec-card">
+      <div class="spec-label">Brand Navy 900</div>
+      <div class="spec-value"><span class="color-dot" style="background:#071626;"></span>#071626</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Navy Surface 700</div>
+      <div class="spec-value"><span class="color-dot" style="background:#0F2A4A;"></span>#0F2A4A</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Electric Cobalt 500</div>
+      <div class="spec-value"><span class="color-dot" style="background:#3B82F6;"></span>#3B82F6</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Solar Spark Accent</div>
+      <div class="spec-value"><span class="color-dot" style="background:#FF5100;"></span>#FF5100</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

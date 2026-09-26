@@ -1,0 +1,34 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mark-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0E2442"/>
+      <stop offset="100%" stop-color="#071324"/>
+    </linearGradient>
+    <linearGradient id="mark-orange" x1="250" y1="110" x2="440" y2="280" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFA426"/>
+      <stop offset="100%" stop-color="#FF5100"/>
+    </linearGradient>
+    <linearGradient id="mark-blue" x1="250" y1="280" x2="440" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <filter id="mark-glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#1D4ED8" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Container Squircle -->
+  <rect x="16" y="16" width="480" height="480" rx="136" fill="url(#mark-bg)" stroke="#1F3E68" stroke-width="12" filter="url(#mark-glow)"/>
+
+  <!-- J Architectural Spine -->
+  <path d="M142 120H202V289C202 334.287 165.287 371 120 371C95.8457 371 76.2625 351.417 76.2625 327.262C76.2625 303.108 95.8457 283.525 120 283.525C132.146 283.525 142 293.379 142 305.525V120Z" fill="#FFFFFF"/>
+
+  <!-- K Upper Launch Arrow (Velocity) -->
+  <polygon points="234.5,207 365.5,120 398.5,169 278,245.5" fill="url(#mark-orange)"/>
+
+  <!-- K Lower Strut (Stability) -->
+  <polygon points="240,273 284,256 393,365 349,398" fill="url(#mark-blue)"/>
+
+  <!-- Energy Spark Core -->
+  <circle cx="224" cy="240" r="24" fill="#FFA424"/>
+</svg>

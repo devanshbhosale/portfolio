@@ -1,0 +1,37 @@
+<svg width="220" height="48" viewBox="0 0 220 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800;900&amp;display=swap');
+      .brand-title-light {
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        font-weight: 900;
+        font-size: 24px;
+        fill: #0B1F38;
+        letter-spacing: -0.04em;
+      }
+      .brand-accent-light {
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        font-weight: 800;
+        font-size: 24px;
+        fill: #1D4ED8;
+        letter-spacing: -0.03em;
+      }
+    </style>
+  </defs>
+
+  <!-- Kinetic JK Monogram Mark Light Surface -->
+  <g transform="translate(2, 2)">
+    <rect width="44" height="44" rx="12" fill="#F0F7FF" stroke="#BFDBFE" stroke-width="1.2"/>
+    <path d="M13 11H18.5V26.5C18.5 30.6421 15.1421 34 11 34C8.79086 34 7 32.2091 7 30C7 27.7909 8.79086 26 11 26C12.1046 26 13 26.8954 13 28V11Z" fill="#0F2A4A"/>
+    <polygon points="21.5,19 33.5,11 36.5,15.5 25.5,22.5" fill="#EA580C"/>
+    <polygon points="22,25 26,23.5 36,33.5 32,36.5" fill="#1D4ED8"/>
+    <circle cx="20.5" cy="22" r="2.2" fill="#EA580C"/>
+  </g>
+
+  <!-- Wordmark Lockup Light -->
+  <g transform="translate(56, 32)">
+    <text class="brand-title-light">Job</text>
+    <text x="44" class="brand-accent-light">karbe</text>
+    <circle cx="118" cy="-6" r="3" fill="#EA580C"/>
+  </g>
+</svg>

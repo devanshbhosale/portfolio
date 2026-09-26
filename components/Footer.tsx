@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Zap } from 'lucide-react'
+import Logo from '@/components/Logo'
 
 export default function Footer() {
   return (
@@ -7,9 +7,8 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Zap size={24} className="text-primary-500" />
-              <span className="text-xl font-bold text-white font-display">Jobkarbe</span>
+            <div className="mb-4">
+              <Logo variant="full" theme="dark" markSize={30} height={30} />
             </div>
             <p className="text-sm">Premium blue-collar job listings with referral rewards.</p>
           </div>
