@@ -55,7 +55,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   // Redacted identity for locked rows — the same discipline as the meta
   // tags: full title/company/description never reach an unentitled browser.
   const lockedView = redactJob(job, false)
-  const teaser = isTeaser(lockedView) ? lockedView : null
+  const teaser = locked && isTeaser(lockedView) ? lockedView : null
 
   let contactInfo: string | null = null
   if (!locked) {
@@ -140,7 +140,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                 <p className="mt-1 text-sm text-gray-600">Upgrade to see the full description details and direct HR contact.</p>
                 <Button href="/pricing" variant="accent" className="mt-4">View Premium Plans</Button>
               </div>
-              <ReportListingButton jobId={job.id} jobTitle={job.title} />
+              <ReportListingButton jobId={job.id} jobTitle={teaser ? `${teaser.title_prefix}…` : job.title} />
             </div>
           ) : (
             <div>

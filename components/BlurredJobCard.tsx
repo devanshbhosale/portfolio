@@ -1,6 +1,6 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Building2, Lock, Sparkles } from 'lucide-react'
+import { Building2, Lock, MapPin, Briefcase, IndianRupee, Tag, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type { TeaserJob } from '@/lib/jobRedaction'
 
@@ -26,32 +26,44 @@ export default function BlurredJobCard({ job, index = 0, unlockFrom, onLockClick
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index, 8) * 0.05 }}
       whileHover={{ y: -4 }}
-      className="relative bg-gray-900 rounded-xl p-5 border border-gray-800 shadow-xs group"
+      className="relative card-glass rounded-xl p-5 group"
     >
       <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-600/20 text-primary-500 border border-primary-500/40">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
           <Sparkles size={12} aria-hidden /> Premium
         </span>
-        <span className="inline-flex items-center gap-1 text-sm text-gray-400">
+        <span className="inline-flex items-center gap-1 text-sm text-gray-500">
           <Lock size={14} aria-hidden /> Locked
         </span>
       </div>
 
       {/* The only revealed content — the server never sends more than this prefix. */}
-      <h3 className="mt-3 text-lg font-bold text-gray-100 truncate">{job.title_prefix}…</h3>
+      <h3 className="mt-3 text-lg font-bold text-gray-900 truncate">{job.title_prefix}…</h3>
 
-      {/* Styling only — decoy rows are already-redacted teaser fields, kept blurred. */}
-      <div className="blur-premium select-none mt-1.5 flex items-center gap-1.5 text-sm text-gray-500" aria-hidden>
+      {/* Styling only — the row blurs the server's placeholder, never a real name. */}
+      <div className="blur-premium select-none mt-1.5 flex items-center gap-1.5 text-sm text-gray-600" aria-hidden>
         <Building2 size={14} aria-hidden /> {job.company}
       </div>
 
-      <div className="mt-4 rounded-lg bg-white/5 px-4 py-8">
-        <div className="blur-premium select-none flex flex-wrap gap-x-3 gap-y-1 text-sm text-gray-500" aria-hidden>
-          {job.salary_range && <span>{job.salary_range}</span>}
-          <span>{job.location}</span>
-          <span>{job.experience}</span>
-        </div>
+      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
+        {job.location && (
+          <span className="blur-premium select-none inline-flex items-center gap-1" aria-hidden>
+            <MapPin size={14} aria-hidden /> {job.location}
+          </span>
+        )}
+        {job.experience && <span className="inline-flex items-center gap-1"><Briefcase size={14} aria-hidden /> {job.experience}</span>}
+        {job.salary_range && <span className="inline-flex items-center gap-1"><IndianRupee size={14} aria-hidden /> {job.salary_range}</span>}
       </div>
+
+      {(job.tags ?? []).length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(job.tags ?? []).slice(0, 5).map((tag) => (
+            <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-gray-100 text-xs text-gray-700">
+              <Tag size={12} aria-hidden /> {tag}
+            </span>
+          ))}
+        </div>
+      )}
 
       <button
         className="absolute inset-0 flex items-center justify-center rounded-xl cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500"
