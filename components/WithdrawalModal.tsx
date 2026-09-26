@@ -130,7 +130,7 @@ export default function WithdrawalModal({ isOpen, onClose, maxAmount, threshold,
                 max={Math.floor(maxAmount * 100) / 100}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                 placeholder={`Between ₹${threshold} and ₹${Math.floor(maxAmount)}`}
               />
               {error && <p role="alert" className="mt-2 text-sm text-red-600">{error}</p>}

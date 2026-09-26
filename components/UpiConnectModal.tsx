@@ -81,7 +81,7 @@ export default function UpiConnectModal({ isOpen, onClose, onSuccess }: UpiConne
                 type="text"
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 font-mono"
                 placeholder="yourname@upi"
                 autoComplete="off"
               />

@@ -33,7 +33,7 @@ export default function HomeSearch() {
           placeholder="Job title or role"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="w-full pl-10 pr-3 py-2.5 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900"
+          className="w-full pl-10 pr-3 py-2.5 rounded-lg border-0 focus:outline-hidden focus:ring-2 focus:ring-primary-500 text-gray-900"
         />
       </div>
       <div className="flex-1 relative sm:border-l sm:border-gray-200">
@@ -45,7 +45,7 @@ export default function HomeSearch() {
           placeholder="Location"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          className="w-full pl-10 pr-3 py-2.5 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900"
+          className="w-full pl-10 pr-3 py-2.5 rounded-lg border-0 focus:outline-hidden focus:ring-2 focus:ring-primary-500 text-gray-900"
         />
       </div>
       <button

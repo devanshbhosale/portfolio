@@ -108,7 +108,7 @@ export default function ReferralDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mt-8 bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
+        className="mt-8 bg-white rounded-xl p-6 border border-gray-200 shadow-xs"
       >
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -132,23 +132,23 @@ export default function ReferralDashboard() {
 
       <div className="mt-6 grid md:grid-cols-3 gap-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+          className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs">
           <div className="flex items-center gap-2 text-gray-500"><Wallet size={18} aria-hidden /><span>Available to withdraw</span></div>
           <p className="mt-2 text-3xl font-bold text-gray-900">₹{withdrawable.toFixed(2)}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+          className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs">
           <div className="flex items-center gap-2 text-gray-500"><Clock size={18} aria-hidden /><span>In holding (15 min)</span></div>
           <p className="mt-2 text-3xl font-bold text-gray-900">₹{holding.toFixed(2)}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-          className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+          className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs">
           <div className="flex items-center gap-2 text-gray-500"><Banknote size={18} aria-hidden /><span>Lifetime earnings</span></div>
           <p className="mt-2 text-3xl font-bold text-gray-900">₹{lifetime.toFixed(2)}</p>
         </motion.div>
       </div>
 
-      <div className="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="mt-8 bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
         <div className="p-4 border-b border-gray-200">
           <h2 className="font-semibold text-gray-800">Referral History</h2>
         </div>
@@ -186,7 +186,7 @@ export default function ReferralDashboard() {
         </div>
       </div>
 
-      <div className="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+      <div className="mt-8 bg-white rounded-xl border border-gray-200 shadow-xs p-6">
         <h2 className="font-semibold text-gray-800">Withdraw Earnings</h2>
         {!payoutReady ? (
           <div className="mt-4 space-y-3">

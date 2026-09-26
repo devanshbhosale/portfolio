@@ -102,7 +102,7 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
                   type="text"
                   value={holderName}
                   onChange={(e) => setHolderName(e.target.value)}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                   placeholder="Full name as per bank records"
                   autoComplete="name"
                 />
@@ -116,7 +116,7 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
                   inputMode="numeric"
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                   placeholder="9-18 digits"
                   autoComplete="off"
                 />
@@ -129,7 +129,7 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
                   type="text"
                   value={ifsc}
                   onChange={(e) => setIfsc(e.target.value.toUpperCase())}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 font-mono"
                   placeholder="HDFC0001234"
                   autoComplete="off"
                 />
@@ -143,7 +143,7 @@ export default function BankConnectModal({ isOpen, onClose, onSuccess }: BankCon
                   value={pan}
                   onChange={(e) => setPan(e.target.value.toUpperCase())}
                   maxLength={10}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 font-mono"
                   placeholder="ABCDE1234F"
                   autoComplete="off"
                 />

@@ -252,7 +252,7 @@ export default function JobsPage() {
             onFocus={() => setRecentsOpen(true)}
             onBlur={() => setRecentsOpen(false)}
             autoComplete="off"
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
           {recentsOpen && filters.search === '' && recents.length > 0 && (
             <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg py-1">
@@ -284,7 +284,7 @@ export default function JobsPage() {
             value={filters.location}
             onChange={(e) => setFilter('location', e.target.value)}
             list="location-suggestions"
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500"
           />
           <datalist id="location-suggestions">
             {(facets?.locations ?? []).map((l) => (
@@ -299,7 +299,7 @@ export default function JobsPage() {
             id="job-category"
             value={filters.tag}
             onChange={(e) => setFilter('tag', e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none bg-white"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 appearance-none bg-white"
           >
             <option value="">All Categories</option>
             {tags.map((tag) => (
@@ -316,7 +316,7 @@ export default function JobsPage() {
             id="job-posted"
             value={filters.posted}
             onChange={(e) => setFilter('posted', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white"
           >
             <option value="">Posted: anytime</option>
             {POSTED_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -328,7 +328,7 @@ export default function JobsPage() {
             id="job-exp"
             value={filters.exp}
             onChange={(e) => setFilter('exp', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white"
           >
             <option value="">Experience: any</option>
             {EXP_OPTIONS.map((o) => (
@@ -345,7 +345,7 @@ export default function JobsPage() {
             id="job-salary"
             value={filters.salary}
             onChange={(e) => setFilter('salary', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white"
           >
             <option value="">Salary: any</option>
             {SALARY_OPTIONS.map((o) => (
@@ -362,7 +362,7 @@ export default function JobsPage() {
             id="job-sort"
             value={filters.sort || 'default'}
             onChange={(e) => setFilter('sort', e.target.value === 'default' ? '' : e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white"
           >
             {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
@@ -455,7 +455,7 @@ export default function JobsPage() {
             <div className="mt-10">
               <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 Premium Listings
-                {!isPremium && <span className="text-sm bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Locked</span>}
+                {!isPremium && <span className="text-sm bg-amber-100 text-amber-800 px-2 py-0.5 rounded-sm">Locked</span>}
               </h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {premiumJobs.map((job, idx) => (

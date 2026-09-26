@@ -26,7 +26,7 @@ export default function BlurredJobCard({ job, index = 0, unlockFrom, onLockClick
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index, 8) * 0.05 }}
       whileHover={{ y: -4 }}
-      className="relative bg-gray-900 rounded-xl p-5 border border-gray-800 shadow-sm group"
+      className="relative bg-gray-900 rounded-xl p-5 border border-gray-800 shadow-xs group"
     >
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-600/20 text-primary-500 border border-primary-500/40">
@@ -54,11 +54,11 @@ export default function BlurredJobCard({ job, index = 0, unlockFrom, onLockClick
       </div>
 
       <button
-        className="absolute inset-0 flex items-center justify-center rounded-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+        className="absolute inset-0 flex items-center justify-center rounded-xl cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500"
         onClick={lock}
         aria-label={`Unlock premium job: ${job.title_prefix}… (${cta})`}
       >
-        <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent-500 group-hover:bg-accent-600 text-white rounded-full text-sm font-semibold shadow-sm transition-colors">
+        <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent-500 group-hover:bg-accent-600 text-white rounded-full text-sm font-semibold shadow-xs transition-colors">
           <Lock size={14} aria-hidden /> {cta}
         </span>
       </button>

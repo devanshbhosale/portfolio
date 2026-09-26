@@ -68,13 +68,13 @@ function LoginForm() {
           <p className="mt-2 text-gray-600">Log in to Jobkarbe</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4" noValidate>
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-xs p-6 space-y-4" noValidate>
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
             <input
               id="email" type="email" required autoComplete="email"
               value={email} onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="mt-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="you@example.com"
             />
           </div>
@@ -83,7 +83,7 @@ function LoginForm() {
             <input
               id="password" type="password" required autoComplete="current-password"
               value={password} onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="mt-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="Your password"
             />
             {error && (

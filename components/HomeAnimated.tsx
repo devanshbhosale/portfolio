@@ -75,7 +75,7 @@ export default function HomeAnimated() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-100px' }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"
+                className="bg-white p-6 rounded-xl shadow-xs border border-gray-200"
               >
                 <feature.icon className="text-primary-600 mb-3" size={28} aria-hidden />
                 <h3 className="text-lg font-bold text-gray-900">{feature.title}</h3>

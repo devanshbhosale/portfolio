@@ -20,7 +20,7 @@ export default function ProfilePage() {
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
       <h1 className="text-3xl font-bold">Profile</h1>
-      <div className="mt-6 bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+      <div className="mt-6 bg-white rounded-xl border border-gray-200 shadow-xs p-6 space-y-4">
         <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
           <UserCircle size={40} className="text-gray-400" aria-hidden />
           <div>

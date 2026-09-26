@@ -114,7 +114,7 @@ export default function ReportListingButton({ jobId, jobTitle }: { jobId: string
                       id="report-reason"
                       value={reason}
                       onChange={(e) => setReason(e.target.value as (typeof REPORT_REASONS)[number])}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                     >
                       {REPORT_REASONS.map((r) => (
                         <option key={r} value={r}>{REASON_LABELS[r]}</option>
@@ -131,7 +131,7 @@ export default function ReportListingButton({ jobId, jobTitle }: { jobId: string
                       onChange={(e) => setNote(e.target.value)}
                       maxLength={500}
                       rows={3}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                       placeholder="What did you notice?"
                     />
                   </div>

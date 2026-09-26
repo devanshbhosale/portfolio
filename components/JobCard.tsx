@@ -27,7 +27,7 @@ export default function JobCard({ job, index = 0, isPremium = false, action }: J
       {action && <div className="absolute top-3 right-3 z-10">{action}</div>}
       <Link
         href={`/jobs/${job.id}`}
-        className="block h-full bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:border-primary-200 hover:shadow-card-hover transition-all"
+        className="block h-full bg-white rounded-xl p-5 border border-gray-200 shadow-xs hover:border-primary-200 hover:shadow-card-hover transition-all"
       >
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -55,7 +55,7 @@ export default function JobCard({ job, index = 0, isPremium = false, action }: J
         {(job.tags ?? []).length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             {(job.tags ?? []).slice(0, 5).map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700">
+              <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-gray-100 text-xs text-gray-700">
                 <Tag size={12} aria-hidden /> {tag}
               </span>
             ))}

@@ -46,7 +46,7 @@ export default function SignupPage() {
   if (needsConfirmation) {
     return (
       <div className="min-h-[calc(100vh-16rem)] py-12 px-4 flex items-center justify-center">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-md w-full text-center">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-xs p-8 max-w-md w-full text-center">
           <Mail size={32} className="mx-auto text-primary-600" aria-hidden />
           <h1 className="mt-3 text-2xl font-bold text-gray-900">Confirm your email</h1>
           <p className="mt-2 text-gray-600">
@@ -67,13 +67,13 @@ export default function SignupPage() {
           <p className="mt-2 text-gray-600">Browse verified jobs and apply directly. It is free.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4" noValidate>
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-xs p-6 space-y-4" noValidate>
           <div>
             <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Full name</label>
             <input
               id="fullName" type="text" required autoComplete="name"
               value={fullName} onChange={(e) => setFullName(e.target.value)}
-              className="mt-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="mt-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="Your name"
             />
           </div>
@@ -82,7 +82,7 @@ export default function SignupPage() {
             <input
               id="email" type="email" required autoComplete="email"
               value={email} onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="mt-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="you@example.com"
             />
           </div>
@@ -91,7 +91,7 @@ export default function SignupPage() {
             <input
               id="password" type="password" required autoComplete="new-password" minLength={8}
               value={password} onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="mt-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="At least 8 characters"
             />
             {error && <p role="alert" className="mt-2 text-sm text-red-600">{error}</p>}
@@ -103,7 +103,7 @@ export default function SignupPage() {
               required
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-1 w-4 h-4 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-2 focus:ring-primary-500"
+              className="mt-1 w-4 h-4 shrink-0 rounded-sm border-gray-300 text-primary-600 focus:ring-2 focus:ring-primary-500"
             />
             <label htmlFor="agree" className="text-sm text-gray-600">
               I am 18 or older and I agree to the{' '}

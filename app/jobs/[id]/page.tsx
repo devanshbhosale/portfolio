@@ -80,7 +80,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         <ArrowLeft size={16} aria-hidden /> All jobs
       </Link>
 
-      <article className="mt-4 bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
+      <article className="mt-4 bg-white rounded-xl border border-gray-200 shadow-xs p-6 md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{teaser ? `${teaser.title_prefix}…` : job.title}</h1>
@@ -112,7 +112,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         {(job.tags ?? []).length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
             {(job.tags ?? []).map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700">
+              <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-gray-100 text-xs text-gray-700">
                 <Tag size={12} aria-hidden /> {tag}
               </span>
             ))}
