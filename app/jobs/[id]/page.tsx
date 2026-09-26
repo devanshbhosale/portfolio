@@ -72,9 +72,13 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       {!locked && (
         <script
           type="application/ld+json"
-          // Built server-side from DB fields only — no user input. Omitted
+          // Job text comes from the scraping pipeline (third-party pages), so
+          // `<` is escaped: JSON.stringify does not neutralize a `</script>`
+          // inside a string, which would break out of this tag. Omitted
           // entirely when locked: it embeds title/company/description.
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJobPostingLd(job, `${SITE_URL}/jobs/${job.id}`)) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(buildJobPostingLd(job, `${SITE_URL}/jobs/${job.id}`)).replace(/</g, '\\u003c'),
+          }}
         />
       )}
       <Link href="/jobs" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
