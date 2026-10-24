@@ -1,10 +1,14 @@
 import './globals.css'
 import { Inter, Poppins } from 'next/font/google'
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ToastProvider } from '@/lib/toast'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import AdSenseScript from '@/components/ads/AdSenseScript'
+import ConsentBanner from '@/components/ConsentBanner'
+import { adsEnabled } from '@/lib/ads'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 // Display face for headings; Devanagari-ready if Hindi ships later.
@@ -37,6 +41,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
+        {/* Consent Mode v2 defaults, denied until the banner choice. Must run
+            BEFORE the AdSense loader (afterInteractive) so a decline is
+            honored from the very first ad request. Only mounted when ads are
+            configured; with ads off there is nothing to consent to. */}
+        {adsEnabled() && (
+          <Script id="consent-defaults" strategy="beforeInteractive">
+            {`window.dataLayer=window.dataLayer||[];window.dataLayer.push(['consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500}]);`}
+          </Script>
+        )}
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[100] focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:font-medium focus:text-navy-700 focus:shadow-lg"
@@ -50,6 +63,8 @@ export default function RootLayout({
             <Footer />
           </ToastProvider>
         </AuthProvider>
+        <AdSenseScript />
+        <ConsentBanner />
       </body>
     </html>
   )

@@ -1,35 +1,4 @@
 import { z } from 'zod'
-import { PLAN_NAMES } from './plans'
-
-export const referralCodeSchema = z.string().regex(/^JK-[A-Z0-9]{8}$/, 'Referral code must look like JK-XXXXXXXX')
-
-export const createCheckoutSchema = z.object({
-  plan: z.enum(PLAN_NAMES),
-  referralCode: referralCodeSchema.optional().or(z.literal('')),
-})
-
-export const verifyPaymentSchema = z.object({
-  // Dodo prefixed ids — anchored alphabet so they can never smuggle PostgREST
-  // filter syntax into an eq() lookup.
-  payment_id: z.string().regex(/^pay_[A-Za-z0-9_]+$/, 'Invalid payment id'),
-})
-
-export const ifscSchema = z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'IFSC must look like HDFC0001234')
-export const accountNumberSchema = z.string().regex(/^\d{9,18}$/, 'Account number must be 9-18 digits')
-export const panSchema = z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, 'PAN must look like ABCDE1234F')
-// Mirrors the DB CHECK (lowercase) — callers pass .toLowerCase() first.
-export const upiIdSchema = z.string().regex(/^[a-z0-9._-]{2,}@[a-z]{2,}$/, 'UPI ID must look like name@bank')
-
-export const bankConnectSchema = z.object({
-  holderName: z.string().trim().min(2).max(120),
-  accountNumber: accountNumberSchema,
-  ifsc: ifscSchema,
-  pan: panSchema,
-})
-
-export const upiConnectSchema = z.object({
-  upiId: upiIdSchema,
-})
 
 export const REPORT_REASONS = ['fake_scam', 'expired', 'asks_for_money', 'discriminatory', 'other'] as const
 
@@ -40,9 +9,4 @@ export const reportSchema = z.object({
   ),
   reason: z.enum(REPORT_REASONS),
   note: z.string().trim().max(500).optional(),
-})
-
-export const withdrawalSchema = z.object({
-  amount: z.coerce.number().positive().max(1_000_000),
-  method: z.enum(['bank', 'upi']).default('bank'),
 })

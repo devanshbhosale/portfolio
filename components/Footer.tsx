@@ -10,21 +10,19 @@ export default function Footer() {
             <div className="mb-4">
               <Logo variant="full" theme="dark" markSize={30} height={30} />
             </div>
-            <p className="text-sm">Premium blue-collar job listings with referral rewards.</p>
+            <p className="text-sm">Verified blue-collar job listings, free to browse and apply.</p>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-3">Quick Links</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="/jobs" className="hover:text-white">Browse Jobs</Link></li>
-              <li><Link href="/pricing" className="hover:text-white">Premium Plans</Link></li>
-              <li><Link href="/dashboard" className="hover:text-white">Referral Dashboard</Link></li>
+              <li><Link href="/contact" className="hover:text-white">Contact Us</Link></li>
+              <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-3">Support</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/contact" className="hover:text-white">Contact Us</Link></li>
-              <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
               <li><Link href="/grievance" className="hover:text-white">Grievance</Link></li>
               <li><Link href="/terms" className="hover:text-white">Terms</Link></li>
               <li><Link href="/privacy" className="hover:text-white">Privacy</Link></li>

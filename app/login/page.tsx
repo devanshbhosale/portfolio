@@ -43,7 +43,7 @@ function LoginForm() {
       router.push(nextUrl)
       return
     }
-    router.push('/dashboard')
+    router.push('/jobs')
   }, [redirecting, user, nextUrl, router])
 
   const handleSubmit = async (e: React.FormEvent) => {

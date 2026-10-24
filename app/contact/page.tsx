@@ -6,7 +6,7 @@ import PageHeader from '@/components/PageHeader'
 export const metadata: Metadata = {
   title: 'Contact Us',
   description:
-    'Reach the Jobkarbe team by email for help with job listings, premium plans, referral rewards, or anything else.',
+    'Reach the Jobkarbe team by email for help with job listings, your account, or anything else.',
 }
 
 const SUPPORT_EMAIL = 'jobkarbe@gmail.com'
@@ -16,7 +16,7 @@ export default function ContactPage() {
     <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
       <PageHeader
         title="Contact Us"
-        subtitle="Questions about jobs, premium plans, or referral rewards? We're here to help."
+        subtitle="Questions about jobs or your account? We're here to help."
       />
 
       <div className="mt-10 bg-white rounded-xl border border-gray-200 shadow-card p-6 sm:p-8">

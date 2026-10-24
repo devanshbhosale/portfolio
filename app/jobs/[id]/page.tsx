@@ -1,15 +1,14 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { MapPin, Briefcase, IndianRupee, Tag, ArrowLeft, Lock, Star, Phone } from 'lucide-react'
-import Button from '@/components/ui/Button'
-import SaveHeart from '@/components/SaveHeart'
+import { MapPin, Briefcase, IndianRupee, Tag, ArrowLeft, Star, Phone } from 'lucide-react'
 import ApplyButton from '@/components/ApplyButton'
 import ReportListingButton from '@/components/ReportListingButton'
-import { adminClient, getAuthedProfile, isPremiumActive } from '@/lib/server'
+import SaveHeart from '@/components/SaveHeart'
+import AdRail from '@/components/ads/AdRail'
+import { adminClient } from '@/lib/server'
 import { safeExternalUrl } from '@/lib/safe-url'
 import { buildJobPostingLd } from '@/lib/jobPosting'
-import { redactJob, isTeaser } from '@/lib/jobRedaction'
 import { isFeaturedNow } from '@/lib/freshness'
 import type { PublicJob } from '@/lib/database.types'
 
@@ -27,15 +26,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params
   const job = await getJob(id)
   if (!job) return { title: 'Job not found' }
-  // Locked premium rows are redacted everywhere — meta tags included. The
-  // full title/company/description must never leak into view-source.
-  const view = redactJob(job, isPremiumActive(await getAuthedProfile()))
-  if (isTeaser(view)) {
-    return {
-      title: `${view.title_prefix}… Premium Job`,
-      description: 'This premium listing is available to Jobkarbe Premium members.',
-    }
-  }
   return {
     title: `${job.title} at ${job.company}`,
     description: (job.description ?? `${job.title} role in ${job.location ?? 'India'}`).slice(0, 160),
@@ -47,40 +37,29 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const job = await getJob(id)
   if (!job) notFound()
 
-  // The lock must factor in the VIEWER: a premium subscriber never sees a
-  // paywall, even on premium listings without contact_info (2026-08-22 bug —
-  // locked was just job.is_premium, hiding the Apply button from payers).
-  const locked = Boolean(job.is_premium) && !isPremiumActive(await getAuthedProfile())
+  const { data: contactRow } = await adminClient()
+    .from('job_listings')
+    .select('contact_info')
+    .eq('id', job.id)
+    .single()
+  const contactInfo = contactRow?.contact_info ?? null
 
-  // Redacted identity for locked rows — the same discipline as the meta
-  // tags: full title/company/description never reach an unentitled browser.
-  const lockedView = redactJob(job, false)
-  const teaser = locked && isTeaser(lockedView) ? lockedView : null
-
-  let contactInfo: string | null = null
-  if (!locked) {
-    const { data } = await adminClient().from('job_listings').select('contact_info').eq('id', job.id).single()
-    contactInfo = data?.contact_info ?? null
-  }
-
-  const featured = isFeaturedNow(job)
+  const featured = isFeaturedNow(job) || Boolean(job.is_premium)
   const safeSourceLink = safeExternalUrl(job.source_link)
   const safeApplyUrl = safeExternalUrl(job.apply_url)
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-      {!locked && (
-        <script
-          type="application/ld+json"
-          // Job text comes from the scraping pipeline (third-party pages), so
-          // `<` is escaped: JSON.stringify does not neutralize a `</script>`
-          // inside a string, which would break out of this tag. Omitted
-          // entirely when locked: it embeds title/company/description.
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(buildJobPostingLd(job, `${SITE_URL}/jobs/${job.id}`)).replace(/</g, '\\u003c'),
-          }}
-        />
-      )}
+    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-3xl xl:max-w-6xl mx-auto xl:grid xl:grid-cols-[minmax(0,1fr)_300px] xl:gap-6">
+      <div className="min-w-0">
+      <script
+        type="application/ld+json"
+        // Job text comes from the scraping pipeline (third-party pages), so
+        // `<` is escaped: JSON.stringify does not neutralize a `</script>`
+        // inside a string, which would break out of this tag.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(buildJobPostingLd(job, `${SITE_URL}/jobs/${job.id}`)).replace(/</g, '\\u003c'),
+        }}
+      />
       <Link href="/jobs" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
         <ArrowLeft size={16} aria-hidden /> All jobs
       </Link>
@@ -88,22 +67,15 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       <article className="mt-4 bg-white rounded-xl border border-gray-200 shadow-xs p-6 md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{teaser ? `${teaser.title_prefix}…` : job.title}</h1>
-            <p className="mt-1 text-lg text-gray-600">{teaser ? 'Top Employer' : job.company}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{job.title}</h1>
+            <p className="mt-1 text-lg text-gray-600">{job.company}</p>
           </div>
           <div className="flex items-start gap-2">
-            <div className="flex flex-col items-end gap-2">
-              {featured && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                  <Star size={12} aria-hidden /> Featured
-                </span>
-              )}
-              {job.is_premium && (
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${locked ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
-                  {locked ? <><Lock size={12} aria-hidden /> Premium</> : 'Premium · Unlocked'}
-                </span>
-              )}
-            </div>
+            {featured && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                <Star size={12} aria-hidden /> Featured
+              </span>
+            )}
             <SaveHeart jobId={job.id} />
           </div>
         </div>
@@ -124,7 +96,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           </div>
         )}
 
-        {job.description && !teaser && (
+        {job.description && (
           <section className="mt-6 pt-6 border-t border-gray-100">
             <h2 className="text-lg font-semibold text-gray-800">Job description</h2>
             <p className="mt-2 whitespace-pre-line text-gray-700 leading-relaxed">{job.description}</p>
@@ -132,49 +104,39 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         )}
 
         <section className="mt-6 pt-6 border-t border-gray-100">
-          {locked ? (
-            <div>
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-center">
-                <Lock className="mx-auto text-amber-600 mb-2" size={24} aria-hidden />
-                <h2 className="font-semibold text-gray-900">This is a premium listing</h2>
-                <p className="mt-1 text-sm text-gray-600">Upgrade to see the full description details and direct HR contact.</p>
-                <Button href="/pricing" variant="accent" className="mt-4">View Premium Plans</Button>
-              </div>
-              <ReportListingButton jobId={job.id} jobTitle={teaser ? `${teaser.title_prefix}…` : job.title} />
-            </div>
-          ) : (
-            <div>
-              {safeApplyUrl && (
-                <>
-                  <ApplyButton jobId={job.id} href={safeApplyUrl} />
-                  <p className="mt-2 text-xs text-gray-500">
-                    Legitimate employers never ask for money. Jobkarbe charges only for platform access.
-                  </p>
-                </>
-              )}
-              <h2 className="mt-6 text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <Phone size={18} className="text-primary-600" aria-hidden /> HR contact
-              </h2>
-              {contactInfo ? (
-                <p className="mt-2 text-gray-700 whitespace-pre-line">{contactInfo}</p>
-              ) : (
-                <p className="mt-2 text-gray-600">Contact details not provided for this listing.</p>
-              )}
-              {safeSourceLink && (
-                <a
-                  href={safeSourceLink}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="inline-flex items-center gap-1 mt-4 text-sm text-gray-500 hover:text-gray-700"
-                >
-                  View original posting ↗
-                </a>
-              )}
-              <ReportListingButton jobId={job.id} jobTitle={teaser ? `${teaser.title_prefix}…` : job.title} />
-            </div>
-          )}
+          <div>
+            {safeApplyUrl && (
+              <>
+                <ApplyButton jobId={job.id} href={safeApplyUrl} />
+                <p className="mt-2 text-xs text-gray-500">
+                  Legitimate employers never ask for money. Applying on Jobkarbe is always free.
+                </p>
+              </>
+            )}
+            <h2 className="mt-6 text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <Phone size={18} className="text-primary-600" aria-hidden /> HR contact
+            </h2>
+            {contactInfo ? (
+              <p className="mt-2 text-gray-700 whitespace-pre-line">{contactInfo}</p>
+            ) : (
+              <p className="mt-2 text-gray-600">Contact details not provided for this listing.</p>
+            )}
+            {safeSourceLink && (
+              <a
+                href={safeSourceLink}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="inline-flex items-center gap-1 mt-4 text-sm text-gray-500 hover:text-gray-700"
+              >
+                View original posting ↗
+              </a>
+            )}
+            <ReportListingButton jobId={job.id} jobTitle={job.title} />
+          </div>
         </section>
       </article>
+      </div>
+      <AdRail slot="detailRail" />
     </div>
   )
 }

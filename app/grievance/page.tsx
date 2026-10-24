@@ -55,7 +55,7 @@ export default function GrievancePage() {
           <ol className="mt-4 space-y-3 text-gray-600 list-decimal list-inside">
             <li>
               Email <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-primary-600 hover:text-primary-700">{SUPPORT_EMAIL}</a> with
-              what happened. Include your account email and, if it is about a payment, the payment reference.
+              what happened. Include your account email and the job title or link if it is about a listing.
             </li>
             <li>We reply with a ticket reference. Keep it for any follow-up.</li>
             <li>We investigate and get back with an answer or fix.</li>
@@ -65,7 +65,6 @@ export default function GrievancePage() {
         <section>
           <h2 className="text-xl font-semibold text-gray-900">What you can raise</h2>
           <ul className="mt-4 space-y-3 text-gray-600 list-disc list-inside">
-            <li>Payment and refund issues, including wrong or duplicate charges</li>
             <li>A listing that is a scam, expired, discriminatory, or asks for money to apply</li>
             <li>Privacy requests: a copy of your data, corrections, or account deletion</li>
             <li>An employer or HR contact asking to have their details removed</li>

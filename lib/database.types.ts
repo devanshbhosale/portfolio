@@ -1,20 +1,13 @@
-// Hand-written mirror of supabase/schema.sql (v11). When the schema changes,
-// change both. (Regenerate with `supabase gen types typescript` once a
-// real project exists if drift appears.)
+// Hand-written mirror of the WEBSITE-CONSUMED subset of supabase/schema.sql
+// (v11). Payment/premium tables, RPCs and columns still exist in the live DB
+// (profiles.*, premium_purchases, withdrawal_requests, site_settings) but are
+// dashboard-repo-only since the site went ad-supported (2026-10-24) — the
+// schema file remains the full reference.
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
-/** Plans currently offered for sale (pricing page + checkout validation). */
-export type PlanName = 'Weekly' | 'Monthly' | 'Lifetime'
-/** Retired plans that still exist in historical purchase rows and replays. */
-export type LegacyPlanName = 'Quarterly' | 'Annual'
-/** Every plan the DB CHECK constraints accept — webhook + reconciler set. */
-export type FulfillablePlanName = PlanName | LegacyPlanName
 export type UserRole = 'jobseeker' | 'operator'
 export type JobStatus = 'pending_review' | 'approved' | 'rejected'
-export type CommissionStatus = 'none' | 'pending' | 'available' | 'withdrawn' | 'voided'
-export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'reversed'
-export type PayoutMethod = 'bank' | 'upi'
 
 export type ProfileRow = {
   id: string
@@ -22,7 +15,7 @@ export type ProfileRow = {
   full_name: string | null
   role: UserRole
   referral_code: string
-  premium_plan: FulfillablePlanName | null
+  premium_plan: string | null
   premium_expires_at: string | null
   bank_holder_name: string | null
   bank_account_number: string | null
@@ -66,47 +59,6 @@ export type JobListingRow = {
   exp_max_months: number | null
 }
 
-export type PremiumPurchaseRow = {
-  id: string
-  user_id: string
-  plan: FulfillablePlanName
-  amount: number
-  payment_id: string
-  order_id: string | null
-  referral_code_used: string | null
-  referrer_user_id: string | null
-  commission_amount: number
-  withdrawn_amount: number
-  commission_status: CommissionStatus
-  premium_granted_until: string | null
-  refunded_at: string | null
-  created_at: string
-}
-
-export type WithdrawalRequestRow = {
-  id: string
-  user_id: string
-  amount: number
-  payout_method: PayoutMethod
-  bank_holder_name: string | null
-  bank_account_number: string | null
-  bank_ifsc: string | null
-  upi_id: string | null
-  status: WithdrawalStatus
-  admin_notes: string | null
-  created_at: string
-  processed_at: string | null
-  processed_by: string | null
-  reversed_at: string | null
-  reversed_by: string | null
-}
-
-/** Browser-facing withdrawal record — payout fields stay server-side. */
-export type WithdrawalSummaryRow = Pick<
-  WithdrawalRequestRow,
-  'id' | 'user_id' | 'amount' | 'payout_method' | 'status' | 'created_at' | 'processed_at'
->
-
 export type JobMarkRow = {
   id: string
   user_id: string
@@ -125,37 +77,6 @@ export type ReportRow = {
   job_id: string
   reason: ReportReason
   note: string | null
-  created_at: string
-}
-
-export type SiteSettingsRow = {
-  id: number
-  price_weekly: number
-  price_monthly: number
-  price_quarterly: number
-  price_annual: number
-  price_lifetime: number
-  mrp_weekly: number
-  mrp_monthly: number
-  mrp_lifetime: number
-  commission_tiers: Record<PlanName, number>
-  withdraw_threshold: number
-  job_ttl_days: number
-  featured_days: number
-  /** P(job marked premium at submit) — owner-only, SQL editor. */
-  premium_ratio: number
-  updated_at: string
-}
-
-/** Operator-safe profile columns (no bank_*). The operator_profiles view. */
-export type OperatorProfile = {
-  id: string
-  email: string
-  full_name: string | null
-  role: UserRole
-  referral_code: string
-  premium_plan: FulfillablePlanName | null
-  premium_expires_at: string | null
   created_at: string
 }
 
@@ -225,55 +146,6 @@ export type Database = {
         Update: Partial<Omit<JobListingRow, 'id' | 'created_at'>>
         Relationships: []
       }
-      premium_purchases: {
-        Row: PremiumPurchaseRow
-        Insert: Omit<PremiumPurchaseRow, 'id' | 'created_at' | 'commission_amount' | 'withdrawn_amount' | 'commission_status' | 'premium_granted_until' | 'refunded_at' | 'order_id' | 'referral_code_used' | 'referrer_user_id'> & {
-          id?: string
-          created_at?: string
-          order_id?: string | null
-          referral_code_used?: string | null
-          referrer_user_id?: string | null
-          premium_granted_until?: string | null
-          refunded_at?: string | null
-        }
-        Update: Partial<Omit<PremiumPurchaseRow, 'id' | 'created_at'>>
-        Relationships: [
-          {
-            foreignKeyName: 'premium_purchases_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'premium_purchases_referrer_user_id_fkey'
-            columns: ['referrer_user_id']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      withdrawal_requests: {
-        Row: WithdrawalRequestRow
-        Insert: Omit<WithdrawalRequestRow, 'id' | 'created_at' | 'processed_at' | 'processed_by' | 'reversed_at' | 'reversed_by' | 'status' | 'admin_notes'> & {
-          id?: string
-          created_at?: string
-          status?: WithdrawalStatus
-          admin_notes?: string | null
-          processed_by?: string | null
-          reversed_at?: string | null
-          reversed_by?: string | null
-        }
-        Update: Partial<Omit<WithdrawalRequestRow, 'id' | 'created_at'>>
-        Relationships: []
-      }
-      site_settings: {
-        Row: SiteSettingsRow
-        Insert: Partial<SiteSettingsRow> & { id?: number }
-        Update: Partial<Omit<SiteSettingsRow, 'id'>>
-        Relationships: []
-      }
       jobs_version: {
         Row: { id: number; version: number }
         Insert: { id?: number; version?: number }
@@ -318,7 +190,6 @@ export type Database = {
     }
     Views: {
       public_jobs: { Row: PublicJob; Relationships: [] }
-      operator_profiles: { Row: OperatorProfile; Relationships: [] }
       public_tags: { Row: { tag: string | null }; Relationships: [] }
     }
     Functions: {
@@ -342,26 +213,6 @@ export type Database = {
       }
       suggest_job_query: { Args: { q: string }; Returns: string | null }
       delete_job: { Args: { p_id: string }; Returns: Json }
-      process_payment: {
-        Args: {
-          p_user_id: string
-          p_plan: string
-          p_amount: number
-          p_payment_id: string
-          p_order_id: string | null
-          p_referral_code: string | null
-          p_expected_paise: number
-        }
-        Returns: Json
-      }
-      update_own_profile: { Args: { p_holder: string; p_account: string; p_ifsc: string; p_pan?: string }; Returns: undefined }
-      set_own_upi: { Args: { p_upi?: string | null }; Returns: undefined }
-      release_commissions: { Args: Record<string, never>; Returns: number }
-      approve_withdrawal: { Args: { p_id: string }; Returns: Json }
-      reject_withdrawal: { Args: { p_id: string; p_note: string }; Returns: Json }
-      reverse_withdrawal: { Args: { p_id: string; p_note: string }; Returns: Json }
-      request_withdrawal: { Args: { p_amount: number; p_method?: string }; Returns: Json }
-      void_commission: { Args: { p_payment_id: string; p_refund_amount: number }; Returns: undefined }
       submit_job: {
         Args: {
           p_title: string
@@ -381,18 +232,6 @@ export type Database = {
       reject_job: { Args: { p_id: string; p_note: string }; Returns: Json }
       renew_job: { Args: { p_id: string }; Returns: Json }
       set_job_stale: { Args: { p_id: string; p_stale: boolean }; Returns: Json }
-      update_site_settings_desktop: {
-        Args: {
-          p_price_weekly: number
-          p_price_monthly: number
-          p_price_quarterly: number
-          p_price_annual: number
-          p_commission_tiers: Json
-          p_job_ttl_days: number
-          p_featured_days: number
-        }
-        Returns: undefined
-      }
     }
   }
 }

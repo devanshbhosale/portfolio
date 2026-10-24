@@ -10,12 +10,6 @@ export interface AuthUser {
   name: string
   email: string
   role: UserRole
-  referralCode: string
-  premium: boolean
-  premiumExpiresAt: string | null
-  bankConnected: boolean
-  bankLast4: string | null
-  upiId: string | null
 }
 
 interface AuthResult {
@@ -41,7 +35,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
  *  a subset of the column-level SELECT grant; raw bank_* are never fetched). */
 type SafeProfileRow = Pick<
   ProfileRow,
-  'id' | 'email' | 'full_name' | 'role' | 'referral_code' | 'premium_plan' | 'premium_expires_at' | 'bank_connected_at' | 'bank_last4' | 'upi_id' | 'pan_number' | 'terms_accepted_at' | 'created_at'
+  'id' | 'email' | 'full_name' | 'role'
 >
 
 /** Exported for the safe-column invariant test — not for app use. */
@@ -51,14 +45,6 @@ export function toAuthUser(session: Session, profile: SafeProfileRow): AuthUser 
     name: profile.full_name || profile.email.split('@')[0],
     email: profile.email,
     role: profile.role,
-    referralCode: profile.referral_code,
-    premium: profile.premium_expires_at
-      ? new Date(profile.premium_expires_at).getTime() > Date.now()
-      : false,
-    premiumExpiresAt: profile.premium_expires_at,
-    bankConnected: Boolean(profile.bank_connected_at && profile.bank_last4),
-    bankLast4: profile.bank_last4 ?? null,
-    upiId: profile.upi_id ?? null,
   }
 }
 
@@ -74,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // browser (and after the column grants land, they are not even readable).
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, email, full_name, role, referral_code, premium_plan, premium_expires_at, bank_connected_at, bank_last4, upi_id, pan_number, terms_accepted_at, created_at')
+        .select('id, email, full_name, role')
         .eq('id', session.user.id)
         .single()
       if (!error && profile) {

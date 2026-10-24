@@ -1,21 +1,18 @@
 'use client'
-import { Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Fragment, Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Search, MapPin, Briefcase, AlertCircle, Heart, X } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import JobCard from '@/components/JobCard'
-import BlurredJobCard from '@/components/BlurredJobCard'
-import PaywallModal from '@/components/PaywallModal'
 import SaveHeart from '@/components/SaveHeart'
 import SkeletonLoader from '@/components/SkeletonLoader'
 import Button from '@/components/ui/Button'
+import AdSlot from '@/components/ads/AdSlot'
+import AdRail from '@/components/ads/AdRail'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/contexts/AuthContext'
 import {
   DEFAULT_FILTERS, apiParams, filterJobs, filtersFromParams, filtersToParams,
   type JobFilters, type Tier,
 } from '@/lib/jobsFilters'
-import { isTeaser, type ApiJob } from '@/lib/jobRedaction'
-import { rupees } from '@/lib/plans'
 import { PAGE_SIZE, type SearchFacets } from '@/lib/jobsQuery'
 import {
   getEmptyRecentsSnapshot,
@@ -31,7 +28,7 @@ import type { PublicJob } from '@/lib/database.types'
 const TIER_OPTIONS: { value: Tier; label: string; icon?: 'heart' }[] = [
   { value: 'all', label: 'All' },
   { value: 'free', label: 'Free' },
-  { value: 'premium', label: 'Premium' },
+  { value: 'premium', label: 'Featured' },
   { value: 'saved', label: 'Saved', icon: 'heart' },
 ]
 
@@ -62,22 +59,16 @@ const EXP_LABELS = Object.fromEntries(EXP_OPTIONS.map((o) => [o.value, o.label])
 const POSTED_LABELS = Object.fromEntries(POSTED_OPTIONS.map((o) => [o.value, o.label]))
 const SORT_LABELS = Object.fromEntries(SORT_OPTIONS.map((o) => [o.value, o.label]))
 
-const isFullJob = (j: ApiJob): j is PublicJob => !isTeaser(j)
-
 function JobsPageContent() {
-  const { user } = useAuth()
-  const isPremium = Boolean(user?.premium)
   // URL is the initial-filter source (shareable /jobs?location=Mumbai&q=…);
   // useSearchParams is the SSR-safe store read for it.
   const searchParams = useSearchParams()
 
-  const [jobs, setJobs] = useState<ApiJob[]>([])
+  const [jobs, setJobs] = useState<PublicJob[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
-  const [paywallOpen, setPaywallOpen] = useState(false)
-  const [unlockFrom, setUnlockFrom] = useState<number | null>(null)
   const [filters, setFilters] = useState<JobFilters>(() => filtersFromParams(searchParams.toString()))
   // Saved ids + recent searches read live from localStorage through the
   // job-memory store — heart writes elsewhere update the feed with no
@@ -96,8 +87,7 @@ function JobsPageContent() {
   // overwrite a newer one — only the latest invocation writes state.
   const reqSeq = useRef(0)
 
-  // All job data comes from /api/jobs — the server applies entitlement
-  // redaction before anything reaches this browser.
+  // All job data comes from /api/jobs — the single server-side exit point.
   const load = useCallback(async (page: number, replace: boolean) => {
     const seq = ++reqSeq.current
     let res: Response
@@ -114,7 +104,7 @@ function JobsPageContent() {
       return false
     }
     const data = (await res.json()) as {
-      jobs: ApiJob[]
+      jobs: PublicJob[]
       hasMore: boolean
       total: number
       facets?: SearchFacets
@@ -135,9 +125,7 @@ function JobsPageContent() {
     return true
   }, [filters])
 
-  // One-shot remote lists: live tag list from the DB, locked-card CTA price
-  // from settings (focus/90s refetches don't need it; unknown stays null →
-  // the card shows plain "Unlock", never a wrong price).
+  // One-shot remote list: live tag list from the DB.
   useEffect(() => {
     supabase
       .from('public_tags')
@@ -145,14 +133,6 @@ function JobsPageContent() {
       .order('tag')
       .then(({ data }) => {
         setTags(((data ?? []) as { tag: string }[]).map((r) => r.tag).filter(Boolean))
-      })
-    fetch('/api/settings')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((s: { prices?: { Weekly?: unknown } } | null) => {
-        if (typeof s?.prices?.Weekly === 'number') setUnlockFrom(Math.round(rupees(s.prices.Weekly)))
-      })
-      .catch(() => {
-        // leave null
       })
   }, [])
 
@@ -225,7 +205,9 @@ function JobsPageContent() {
     : tags.slice(0, 5).map((t) => ({ value: t, count: 0 }))
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl xl:max-w-[1400px] mx-auto xl:grid xl:grid-cols-[160px_minmax(0,1fr)_300px] xl:gap-6">
+      <AdRail slot="jobsLeftRail" />
+      <div>
       <h1 className="text-3xl font-bold text-gray-900">Browse Jobs</h1>
       <p className="mt-2 text-gray-600">Find your next opportunity in blue-collar roles</p>
 
@@ -428,14 +410,18 @@ function JobsPageContent() {
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Free Listings</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {freeJobs.map((job, idx) => (
-                  isFullJob(job) && (
+                  <Fragment key={job.id}>
                     <JobCard
-                      key={job.id}
                       job={job}
                       index={idx}
                       action={<SaveHeart jobId={job.id} />}
                     />
-                  )
+                    {(idx + 1) % 6 === 0 && (
+                      <div className="md:col-span-2 lg:col-span-3">
+                        <AdSlot slot="jobsInFeed" />
+                      </div>
+                    )}
+                  </Fragment>
                 ))}
               </div>
             </div>
@@ -443,29 +429,22 @@ function JobsPageContent() {
 
           {premiumJobs.length > 0 && (
             <div className="mt-10">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                Premium Listings
-                {!isPremium && <span className="text-sm bg-amber-100 text-amber-800 px-2 py-0.5 rounded-sm">Locked</span>}
-              </h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Featured Listings</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {premiumJobs.map((job, idx) => (
-                  isFullJob(job) ? (
+                  <Fragment key={job.id}>
                     <JobCard
-                      key={job.id}
                       job={job}
                       index={idx}
                       isPremium
                       action={<SaveHeart jobId={job.id} />}
                     />
-                  ) : (
-                    <BlurredJobCard
-                      key={job.id}
-                      job={job}
-                      index={idx}
-                      unlockFrom={unlockFrom ?? undefined}
-                      onLockClick={() => setPaywallOpen(true)}
-                    />
-                  )
+                    {(idx + 1) % 6 === 0 && (
+                      <div className="md:col-span-2 lg:col-span-3">
+                        <AdSlot slot="jobsInFeed" />
+                      </div>
+                    )}
+                  </Fragment>
                 ))}
               </div>
             </div>
@@ -516,8 +495,8 @@ function JobsPageContent() {
           )}
         </>
       )}
-
-      <PaywallModal isOpen={paywallOpen} onClose={() => setPaywallOpen(false)} />
+      </div>
+      <AdRail slot="jobsRightRail" />
     </div>
   )
 }

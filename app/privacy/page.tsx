@@ -4,7 +4,7 @@ import PageHeader from '@/components/PageHeader'
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description:
-    'How Jobkarbe collects, uses, and protects your data: account information, bank or UPI details for payouts, job data sourcing, cookies, and your rights.',
+    'How Jobkarbe collects, uses, and protects your data: account information, job data sourcing, advertising cookies, and your rights.',
 }
 
 interface Section {
@@ -16,14 +16,14 @@ const sections: Section[] = [
   {
     heading: '1. What we collect',
     paragraphs: [
-      'When you create an account, we store your name, email address, and login credentials. We also keep your saved-job preferences and referral program history on your account.',
-      'If you connect a bank account for referral payouts, we store the account holder name, account number, IFSC code, and PAN you enter in the bank-connect form. If you add a UPI ID instead, we store just that ID. These details are used solely to send your referral earnings to you and for legally required tax reporting, and they are never shared with anyone else.',
+      'When you create an account, we store your name, email address, and login credentials. We also keep your saved-job preferences on your account.',
+      'You can browse and apply for jobs without creating an account, and browsing works without one.',
     ],
   },
   {
     heading: '2. How we use your data',
     paragraphs: [
-      'Your information powers the core service: surfacing relevant job listings, processing premium plan payments (handled securely by Dodo Payments), running the referral rewards program including bank payouts, and providing customer support. We do not sell your personal information to third parties.',
+      'Your information powers the core service: surfacing relevant job listings, remembering your saved jobs, and providing customer support. Jobkarbe is free and supported by advertising; we do not sell your personal information to third parties.',
     ],
   },
   {
@@ -33,23 +33,22 @@ const sections: Section[] = [
     ],
   },
   {
-    heading: '4. Cookies',
+    heading: '4. Cookies and advertising',
     paragraphs: [
-      'We use only essential cookies today, to keep you signed in and manage your session. We do not run analytics or advertising cookies, so there is nothing to opt out of beyond these essentials.',
-      'If we ever add analytics, we will add a consent banner in the same change and update this section.',
+      'We use essential cookies to keep you signed in and manage your session.',
+      'Jobkarbe shows ads served by Google AdSense. When ads are live, Google and its partners use advertising cookies, including the DoubleClick cookie, to serve ads based on your prior visits to this and other websites. On your first visit a consent banner asks for your choice, and you can change it anytime. You can opt out of personalized advertising through Google Ads Settings at adssettings.google.com or through www.aboutads.info.',
     ],
   },
   {
     heading: '5. Processors and where your data lives',
     paragraphs: [
-      'We rely on these processors to run the service: Vercel (hosting), Supabase (database), Dodo Payments (payments), and Google/Gmail (support email). Your data is processed on their infrastructure, which is located in the United States.',
-      'Payments are handled by Dodo Payments. Your card and UPI details are entered directly into Dodo Payments\u2019 hosted checkout page and never reach Jobkarbe\u2019s servers.',
+      'We rely on these processors to run the service: Vercel (hosting), Supabase (database), and Google (advertising and support email). Your data is processed on their infrastructure, which is located in the United States.',
     ],
   },
   {
     heading: '6. Retention',
     paragraphs: [
-      'We keep your account data until you ask us to delete it. Payment records are retained for around 8 years as required by tax law. Withdrawal and payout records are kept for as long as needed to satisfy our tax and accounting obligations.',
+      'We keep your account data until you ask us to delete it. Records from the subscription system we ran before October 2026 are retained for around 8 years as required by tax law.',
     ],
   },
   {
@@ -68,7 +67,7 @@ const sections: Section[] = [
     heading: '9. Your rights',
     paragraphs: [
       'You can request a copy of your data, ask for corrections, or delete your account at any time by emailing jobkarbe@gmail.com from your registered address. We respond within 30 days.',
-      'If you agreed to something you no longer want to agree to, such as marketing emails, tell us in the same email and we will withdraw it for you.',
+      'If you agreed to something you no longer want to agree to, such as personalized advertising, tell us in the same email and we will withdraw it for you.',
     ],
   },
   {
@@ -82,7 +81,7 @@ const sections: Section[] = [
 export default function PrivacyPage() {
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-      <PageHeader title="Privacy Policy" subtitle="Last updated: September 2026" />
+      <PageHeader title="Privacy Policy" subtitle="Last updated: October 2026" />
 
       <div className="mt-10 space-y-8">
         {sections.map((section) => (

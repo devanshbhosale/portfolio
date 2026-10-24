@@ -4,7 +4,7 @@ import PageHeader from '@/components/PageHeader'
 export const metadata: Metadata = {
   title: 'Terms of Service',
   description:
-    'The terms that govern your use of Jobkarbe: accounts, premium subscriptions, referral rewards, job content, and liability.',
+    'The terms that govern your use of Jobkarbe: accounts, job content, advertising, and liability.',
 }
 
 interface Section {
@@ -16,13 +16,13 @@ const sections: Section[] = [
   {
     heading: '1. Who operates Jobkarbe',
     paragraphs: [
-      'Jobkarbe is owned and operated by operatorOP, of Mumbai, Maharashtra, India. These terms form an agreement between you and operatorOP, and apply to your use of the website and every purchase made on it.',
+      'Jobkarbe is owned and operated by operatorOP, of Mumbai, Maharashtra, India. These terms form an agreement between you and operatorOP and apply to your use of the website.',
     ],
   },
   {
     heading: '2. Using Jobkarbe',
     paragraphs: [
-      'You agree to use Jobkarbe lawfully and solely to search and apply for jobs for yourself. You may not scrape or resell data from the site, share your premium access with others, or attempt to work around the paywall. Violating these rules may result in termination of your account.',
+      'You agree to use Jobkarbe lawfully and solely to search and apply for jobs for yourself. You may not scrape or resell data from the site. Violating these rules may result in termination of your account.',
       'You must be 18 or older to use Jobkarbe. Accounts of users under 18 are terminated on discovery.',
     ],
   },
@@ -33,43 +33,33 @@ const sections: Section[] = [
     ],
   },
   {
-    heading: '4. Subscriptions and refunds',
-    paragraphs: [
-      'Premium plans (Weekly, Monthly, and Lifetime) unlock the apply flow for premium listings and their associated perks for the duration of the plan. Weekly and Monthly grants last 7 and 30 days. Lifetime grants access for as long as Jobkarbe operates the service.',
-      'Jobkarbe charges for platform access. You never pay to apply for a job, and legitimate employers never ask candidates for money.',
-      'Because access is granted instantly, we refund: a wrong or duplicate charge, a payment where premium access was never unlocked, or a technical defect that prevents access you paid for. Refund requests are reviewed within 48 hours and paid within 5 to 7 working days to your original payment method.',
-    ],
-  },
-  {
-    heading: '5. Referral rewards',
-    paragraphs: [
-      'Every account receives a referral code. When a new user purchases a premium plan using your code, you earn a commission: 20% on Weekly and Monthly plans, and 25% on the Lifetime plan. Commissions can be withdrawn once your lifetime earnings cross ₹500. Earnings depend on purchases made with your code and are not guaranteed income.',
-      'Commissions are your income; taxes on them are your responsibility. Payouts require the bank details and PAN you provide in the bank-connect form, which are used solely to send your earnings.',
-      'Self-referrals, fake accounts, and any other abuse of the referral program will result in forfeiture of all rewards and may lead to account termination.',
-    ],
-  },
-  {
-    heading: '6. Job content',
+    heading: '4. Job content',
     paragraphs: [
       'Job listings on Jobkarbe are aggregated from publicly available company career pages and public job boards. We do not guarantee the accuracy, availability, or status of any listing, so always verify a role on the official company site before applying. Jobkarbe is not the employer for any role displayed on the site.',
       'If a listing looks wrong (a scam, expired, asking for money, or discriminatory), use the Report this listing control on the job page or email jobkarbe@gmail.com. We review reports and act on valid ones within 36 hours.',
     ],
   },
   {
-    heading: '7. Liability',
+    heading: '5. Advertising',
+    paragraphs: [
+      'Jobkarbe is free to use and supported by advertising. Ads are served by third-party networks such as Google AdSense. The network decides which ads appear, and we do not control or endorse the products and services advertised. You never pay to apply for a job, and legitimate employers never ask candidates for money.',
+    ],
+  },
+  {
+    heading: '6. Liability',
     paragraphs: [
       'The service is provided on an \u201cas is\u201d basis. To the maximum extent permitted by law, Jobkarbe is not liable for any indirect or consequential damages arising from your use of the site.',
       'Nothing in these terms limits your rights under the Consumer Protection Act, 2019 or any other right that cannot lawfully be excluded.',
     ],
   },
   {
-    heading: '8. Changes',
+    heading: '7. Changes',
     paragraphs: [
       'We may update these terms from time to time. Material changes will be communicated by email or an on-site notice. Continuing to use Jobkarbe after a change means you accept the updated terms.',
     ],
   },
   {
-    heading: '9. Governing law',
+    heading: '8. Governing law',
     paragraphs: [
       'These terms are governed by the laws of India. Courts at Mumbai, Maharashtra have exclusive jurisdiction over any dispute arising from your use of Jobkarbe.',
     ],
@@ -79,7 +69,7 @@ const sections: Section[] = [
 export default function TermsPage() {
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-      <PageHeader title="Terms of Service" subtitle="Last updated: September 2026" />
+      <PageHeader title="Terms of Service" subtitle="Last updated: October 2026" />
 
       <div className="mt-10 space-y-8">
         {sections.map((section) => (

@@ -1,20 +1,24 @@
 # Jobkar — Job Portal (Website)
 
-A blue-collar job portal with premium listings, referral rewards, and operator-managed listings. Two repos make up the system:
+A blue-collar job portal, free to browse and apply, supported by ads. Two repos make up the system:
 
 | Repo | What it is | Tech |
 |------|-----------|------|
-| **`jobkar`** (this repo) | Public website + payments + referral dashboard | Next.js 14, Supabase (Postgres + Auth + RLS), Dodo Payments |
+| **`jobkar`** (this repo) | Public website (jobs + accounts) | Next.js, Supabase (Postgres + Auth + RLS), Google AdSense |
 | **`jobkar-dashboard`** | Desktop operator control panel (Windows `.exe`) | Electron + React + Tailwind |
 
-The website is the only public surface. All listing management (scrape → review → approve → withdrawals) happens in the **desktop app**, never on the public domain.
+The website is the only public surface. All listing management (scrape → review → approve) happens in the **desktop app**, never on the public domain.
+
+> Payments, premium subscriptions, referral rewards and payouts were removed
+> from the website on 2026-10-24 (see `docs/ADS-MIGRATION-PLAN.md`). The DB
+> tables remain for the desktop repo; the website simply never touches them.
 
 ## Architecture
 
 ```
 ┌──────────────────────┐        ┌──────────────────────────────┐
-│   Supabase Cloud     │        │  Dodo Payments (checkout +   │
-│  Postgres + Auth     │◄───────┤  webhook → process_payment)  │
+│   Supabase Cloud     │        │  Google AdSense (ads)        │
+│  Postgres + Auth     │        │  script + slots, env-gated   │
 │  Realtime + RLS      │        └──────────────────────────────┘
 └──────────┬───────────┘
            │
@@ -24,27 +28,26 @@ The website is the only public surface. All listing management (scrape → revie
 │  Vercel (Public)     │        │  Desktop app (operators) │
 │  This website        │        │  jobkar-dashboard.exe    │
 │  - jobs feed/detail  │        │  - scrape + AI fallback  │
-│  - pricing + payment │        │  - review + approve      │
-│  - referral dashboard│        │  - purchases + withdrawals│
-│  - NO admin surface  │        │  - analytics + settings  │
+│  - accounts + saves  │        │  - review + approve      │
+│  - ads (AdSense)     │        │  - settings + analytics  │
+│  - NO admin surface  │        │                          │
 └──────────────────────┘        └──────────────────────────┘
 ```
 
 - **One DB, two clients.** Both repos share Supabase. The website is read-mostly; the desktop app is the write path.
-- **Operator accounts.** Listing management is done by accounts with `role = 'operator'` (no `agent`/`admin` roles — see the split migration). Operators sign in to the desktop app, not the website.
-- **Live sync.** The website subscribes to the `jobs_version` sentinel table via Supabase Realtime. When the desktop app inserts/updates/deletes a `job_listings` row, a trigger bumps `jobs_version`, and the website refetches immediately — no polling, no `ENABLE_DASHBOARDS` mode.
-- **Secrets.** Website secrets (`SUPABASE_SERVICE_ROLE_KEY`, `DODO_PAYMENTS_*`, `DODO_PRODUCT_IDS`, `CRON_SECRET`) live only in Vercel project settings. The desktop app holds only `SUPABASE_URL` + `SUPABASE_ANON_KEY` + `GEMINI_API_KEY`, and uses RLS + operator-gated RPCs.
+- **Operator accounts.** Listing management is done by accounts with `role = 'operator'`. Operators sign in to the desktop app, not the website.
+- **Live sync.** The website refetches on window focus and a visible-tab interval; the `jobs_version` trigger table stays as a change sentinel.
+- **Secrets.** Website secrets (`SUPABASE_SERVICE_ROLE_KEY`) live only in Vercel project settings. AdSense is configured by the public `NEXT_PUBLIC_ADSENSE_CLIENT` publisher id. The desktop app holds only `SUPABASE_URL` + `SUPABASE_ANON_KEY` + `GEMINI_API_KEY`, and uses RLS + operator-gated RPCs.
 
 ## Cost
 
 | Item | Cost | Notes |
 |------|------|-------|
 | Supabase Free | ₹0/mo | 500 MB DB, 50k MAU, ~2 verification emails/hour |
-| Vercel Hobby | ₹0/mo | 100 GB bandwidth/mo, daily cron |
+| Vercel Hobby | ₹0/mo | 100 GB bandwidth/mo |
 | GitHub Private | ₹0/mo | Both repos stay closed |
-| Dodo Payments | Pay-as-you-go | Merchant of record — fee per transaction, they handle tax/compliance |
-| Gemini API | Pay-as-you-go | Only for scrape-fallback parsing |
-| Domain (optional) | ₹500–1,000/yr | e.g. `jobkar.in` |
+| Gemini API | Pay-as-you-go | Only for scrape-fallback parsing (desktop app) |
+| Domain (recommended) | ₹500–1,000/yr | AdSense approval on a vercel.app subdomain is unreliable — buy a domain before applying |
 | **When outgrown** | **Supabase Pro $25/mo** · **Vercel Pro $20/mo** | |
 
 ## Quick Start
@@ -61,7 +64,7 @@ cp .env.example .env.local   # fill in real keys (see below)
 ### 2. Supabase Setup
 
 1. Create a project at [supabase.com](https://supabase.com) → note `URL`, `anon key`, `service_role key`.
-2. **SQL Editor** → Run `supabase/schema.sql` (tables, RLS, views, RPCs, trigger — v10).
+2. **SQL Editor** → Run `supabase/schema.sql` (tables, RLS, views, RPCs, triggers).
 3. **SQL Editor** → Run `supabase/seed.sql` (12 demo jobs + settings row).
 4. **Authentication → Providers** → Enable **Email** (turn off "Confirm email" for local testing; keep ON for production).
 5. Create operator account(s):
@@ -71,39 +74,24 @@ cp .env.example .env.local   # fill in real keys (see below)
 
 > Upgrading an existing pre-split database? Run `supabase/dashboard-patch.sql` once instead of `schema.sql`.
 
-### 3. Dodo Payments Setup
-
-1. Create an account at [app.dodopayments.com](https://app.dodopayments.com) and complete account verification.
-2. In **Test Mode**, create three one-time products (Dashboard → Products): Weekly, Monthly, Lifetime — each priced to match your `site_settings` prices (₹99 / ₹199 / ₹999 by default).
-3. **Developers → API Keys** → generate a Test API key (`dodo_test_…`).
-4. **Developer → Webhooks → Add endpoint** → URL `https://<your-vercel-domain>/api/dodo-webhook` → select **payment.succeeded**, **payment.failed**, **refund.succeeded** → save → copy the endpoint's **signing secret** (`whsec_…`) from its Overview tab.
-   > ⚠️ The URL must end in exactly `/api/dodo-webhook`. A webhook pointed at the bare
-   > site accepts the delivery but never fulfills it — checkout succeeds while
-   > `/api/verify-payment` keeps returning `verified:false` and premium never activates.
-5. Map each plan to its product id in `DODO_PRODUCT_IDS` (see below).
-
-### 4. Configure `.env.local`
+### 3. Configure `.env.local`
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-DODO_PAYMENTS_API_KEY=dodo_test_xxx
-DODO_PAYMENTS_WEBHOOK_KEY=whsec_xxx
-DODO_PAYMENTS_ENVIRONMENT=test_mode
-DODO_PRODUCT_IDS=Weekly=pdt_xxx,Monthly=pdt_xxx,Lifetime=pdt_xxx
-
-CRON_SECRET=long-random-string-here
+# Optional until the AdSense account is approved; unset = no ads served.
+NEXT_PUBLIC_ADSENSE_CLIENT=ca-pub-XXXXXXXXXXXXXXXX
 ```
 
-### 5. Run Locally
+### 4. Run Locally
 
 ```bash
 npm run dev      # http://localhost:3000
 ```
 
-### 6. Deploy to Vercel
+### 5. Deploy to Vercel
 
 1. Push to your private GitHub repo.
 2. Vercel → **Add New Project** → Import repo.
@@ -114,53 +102,40 @@ npm run dev      # http://localhost:3000
 
 ```
 jobkar/
-├── app/                          # Next.js 14 App Router
-│   ├── api/                      # API routes
-│   │   ├── jobs/[id]/            # Public job detail (contact_info gated)
-│   │   ├── settings/             # Public pricing config
-│   │   ├── create-checkout/      # Dodo hosted checkout session (server-priced pin)
-│   │   ├── verify-payment/       # Client confirmation polling
-│   │   ├── dodo-webhook/         # Standard-Webhooks signature → process_payment RPC
-│   │   ├── withdrawals/          # Balance-checked withdrawals (session client)
-│   │   └── cron/release-commissions/  # Vercel cron (CRON_SECRET)
+├── app/                          # Next.js App Router
+│   ├── api/
+│   │   ├── jobs/                 # The only public job-list exit (search_jobs RPC)
+│   │   └── reports/              # Report-this-listing (authed)
 │   ├── jobs/                     # Public feed + detail pages
-│   ├── dashboard/                # Jobseeker referral dashboard
-│   ├── login/                    # Supabase email/password
-│   ├── signup/                   # Supabase signup + full_name
-│   ├── pricing/                  # Dodo hosted checkout + verify-payment polling
+│   ├── login/ · signup/          # Supabase email/password
 │   ├── profile/                  # User profile
 │   ├── page.tsx                  # Landing (live jobs + stats)
 │   ├── sitemap.ts / robots.ts    # SEO
-│   └── layout.tsx
+│   └── layout.tsx                # AdSense script + consent banner
 ├── components/
 │   ├── JobCard.tsx               # Public job card
-│   ├── BlurredJobCard.tsx        # Premium paywall card
-│   ├── PaywallModal.tsx          # Premium upsell
+│   ├── ads/                      # AdSlot, AdSenseScript, AdRail
+│   ├── ConsentBanner.tsx         # Cookie consent (Consent Mode v2)
 │   ├── Navbar.tsx / Footer.tsx   # Site chrome
-│   ├── WithdrawalModal.tsx       # Withdrawal submission
-│   ├── BankConnectModal.tsx      # Bank connect (update_own_profile RPC)
 │   └── ui/Button.tsx
-├── contexts/AuthContext.tsx      # Supabase auth + profile sync (operator role type)
+├── contexts/AuthContext.tsx      # Supabase auth + profile sync
 ├── lib/
-│   ├── database.types.ts         # Hand-written typed schema (v10)
+│   ├── ads.ts                    # AdSense client id + slot map
+│   ├── database.types.ts         # Website-consumed typed schema subset
 │   ├── supabase.ts               # Browser client
 │   ├── server.ts                 # Route-handler + service-role clients
-│   ├── dodo.ts                   # Dodo REST helper + webhook signature verify
-│   ├── settings.ts               # site_settings fetch + defaults
-│   ├── plans.ts                  # Prices/durations/tiers
-│   ├── money.ts                  # Commission/expiry/balance math
 │   ├── validation.ts             # Zod schemas
 │   ├── safe-url.ts               # http(s) link allowlist
 │   ├── rate-limit.ts             # In-memory sliding window
 │   └── toast.tsx                 # Toast context
-├── middleware.ts                 # Session refresh + /dashboard,/profile gates
+├── proxy.ts                      # Session refresh + /profile gate
 ├── supabase/
-│   ├── schema.sql                # v10 schema (tables, RLS, views, RPCs)
-│   ├── dashboard-patch.sql       # Pre-split → v10 migration (once)
+│   ├── schema.sql                # Full schema (tables, RLS, views, RPCs)
+│   ├── dashboard-patch.sql       # Pre-split migration (once)
 │   └── seed.sql                  # 12 demo jobs + settings
-├── test/                         # vitest suites (money math, reconcile, validation, …)
+├── test/                         # vitest suites
 ├── vitest.config.ts
-├── vercel.json                   # Daily crons (release_commissions + reconcile-payments)
+├── public/ads.txt                # AdSense authorized sellers
 └── .github/workflows/ci.yml
 ```
 
@@ -170,23 +145,16 @@ jobkar/
 
 1. Operator runs the desktop app → AI Agent tab → pastes a job URL → the app's scraper engine (hardened fetch → cheerio + JSON-LD → `apply_url` heuristics → Gemini fallback) extracts the listing.
 2. The extracted field set goes to the Review Queue as `pending_review`.
-3. Operator toggles Premium/Featured → **Approve** → `approve_job` RPC stamps `approved_at` + `expires_at`.
-4. The `job_listings` trigger bumps `jobs_version`; the website **refetches immediately** via Realtime and the job appears on `/jobs`.
+3. Operator toggles Featured → **Approve** → `approve_job` RPC stamps `approved_at` + `expires_at`.
+4. The `job_listings` trigger bumps `jobs_version`; the job appears on `/jobs`.
 
-`apply_url` is a top-level column (where a job is actually applied — often an ATS link) discovered by the scraper; `source_link` is the original listing page.
+`apply_url` is a top-level column (where a job is actually applied — often an ATS link) discovered by the scraper; `source_link` is the original listing page. Every approved job serves its full fields to every visitor, and every job detail page emits `JobPosting` JSON-LD (Google Jobs eligible).
 
-### Premium Purchase
+### Ads
 
-1. Jobseeker clicks a blurred premium card → **View Premium Plans** → `/pricing`.
-2. Selects plan → optional referral code → **Pay Now**.
-3. Frontend calls `/api/create-checkout` → Dodo hosted checkout session with `metadata` attribution (userId, plan, referralCode) + an order-time price pin from server-side `site_settings` (never from client).
-4. Customer pays on Dodo's hosted page → redirected back to `/pricing?payment_id=…` → `/api/verify-payment` polls → premium unlocks.
-5. Webhook (`/api/dodo-webhook`) → Standard-Webhooks signature verify → amount vs price pin → `process_payment` RPC (idempotent) → premium expiry = `max(current, now) + duration` → tiered referral commission (20%/25%) set to `pending`.
-
-### Referral Commission
-
-- 20% (Weekly/Monthly) or 25% (Lifetime) of plan price.
-- **15-minute holding period**, then available → withdrawn via `/api/withdrawals` → operator approves in the desktop app (`approve_withdrawal` RPC, atomic + partial consumption). Self-referral blocked.
+- Slots live in `components/ads/`; the loader + consent banner mount in `app/layout.tsx`.
+- With `NEXT_PUBLIC_ADSENSE_CLIENT` unset, slots render nothing and no third-party script loads.
+- Slot ids come from `lib/ads.ts`; create the matching ad units in the AdSense dashboard and paste their ids there, then replace the placeholder line in `public/ads.txt`.
 
 ## Running Tests
 
@@ -194,24 +162,23 @@ jobkar/
 npx tsc --noEmit      # TypeScript strict
 npm run lint          # ESLint
 npm run build         # Next.js build
-npx vitest run        # reconcile + validation + money + jobs suites
+npx vitest run        # unit suites
+node scripts/smoke.mjs  # post-deploy live checks (run after every deploy)
 ```
 
-CI runs all four on every push to `main`.
+CI runs the first four on every push to `main`.
 
 ## Security Notes
 
-- **RLS** on all tables; public reads only via `public_jobs` view (safe columns). `contact_info`/`admin_notes` never appear publicly. Operators read all rows via `is_operator()`-gated policies + `operator_profiles` view (which excludes `bank_*`).
-- **Webhook**: Standard-Webhooks HMAC (`webhook-id.webhook-timestamp.body`, base64 secret) with `timingSafeEqual`; amount verified against the checkout-time price pin; idempotent on unique `payment_id`; full refunds void commissions (partial refunds change nothing).
-- **Withdrawal integrity**: `request_withdrawal` RPC locks commission rows and validates threshold/bank/balance in one transaction; `approve_withdrawal` / `reverse_withdrawal` lock rows and re-check the ledger mid-loop (no double-spend; 15-min reverse window).
-- **Money math**: prices always server-side; Dodo metadata values are strings.
-- **No service-role key** in the repo or on operator machines; cron guarded by `CRON_SECRET`. The Dodo API key and webhook secret are server-only env vars — Dodo checkout is fully hosted, so no payment credentials ever reach the browser.
-- **XSS**: `source_link`/`apply_url` rendered only through `safeExternalUrl()` (http/https allowlist); DB check constraint rejects non-http(s) links; scraped descriptions render as escaped text.
-- **CSV export** (desktop app) neutralizes formula-injection cells.
+- **RLS** on all tables; public reads only via `public_jobs` view through the service-role `search_jobs` RPC (anon REST on the view is revoked). `contact_info`/`admin_notes` never appear in list responses. Operators read all rows via `is_operator()`-gated policies.
+- **XSS**: `source_link`/`apply_url` rendered only through `safeExternalUrl()` (http/https allowlist); DB check constraint rejects non-http(s) links; scraped descriptions render as escaped text; JSON-LD escapes `<`.
+- **Ads CSP**: AdSense script/frame origins are allowlisted in `next.config.js`; the pre-existing `unsafe-inline`/`unsafe-eval` trade stays until the nonce-CSP fix lands.
+- **No service-role key** in the repo or on operator machines.
+- Historical payment tables (`premium_purchases`, `withdrawal_requests`) remain in the DB but nothing on the website reads or writes them; the money RPCs are service-role-only.
 
 ## Operator Accounts
 
-Operators manage listings via the **desktop app** (`jobkar-dashboard`). This repo has no admin/agent dashboard pages and no `ENABLE_DASHBOARDS` flag.
+Operators manage listings via the **desktop app** (`jobkar-dashboard`). This repo has no admin/agent dashboard pages.
 
 ```sql
 -- 1. Supabase → Authentication → Users → Add user (owner@…, password).

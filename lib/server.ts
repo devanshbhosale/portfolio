@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
-import type { Database, ProfileRow } from './database.types'
+import type { Database } from './database.types'
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -51,24 +51,6 @@ export async function getAuthedUser() {
   const { data, error } = await (await createRouteClient()).auth.getUser()
   if (error) return null
   return data.user
-}
-
-/** Profile row for the authed user (role, referral code, premium, bank). */
-export async function getAuthedProfile(): Promise<ProfileRow | null> {
-  const user = await getAuthedUser()
-  if (!user) return null
-  const { data, error } = await adminClient()
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-  if (error || !data) return null
-  return data
-}
-
-export function isPremiumActive(profile: Pick<ProfileRow, 'premium_expires_at'> | null | undefined) {
-  if (!profile?.premium_expires_at) return false
-  return new Date(profile.premium_expires_at).getTime() > Date.now()
 }
 
 /** Safe JSON body read: null on malformed JSON instead of a thrown 500. */

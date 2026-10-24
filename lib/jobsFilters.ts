@@ -1,4 +1,4 @@
-import type { ApiJob } from '@/lib/jobRedaction'
+import type { PublicJob } from '@/lib/database.types'
 import {
   EXP_BUCKETS, POSTED_DAYS, SALARY_BUCKETS, SORTS,
   type ExpBucket, type SalaryBucket, type SortKey,
@@ -80,14 +80,14 @@ export function filtersActive(f: JobFilters): boolean {
   )
 }
 
-/** Client-side residual filtering: tier entitlement + locally-saved only.
+/** Client-side residual filtering: tier + locally-saved only.
  *  Everything else (search, location, tag, salary, experience, posted) is
  *  applied server-side by the search_jobs RPC. */
 export function filterJobs(
-  jobs: ApiJob[],
+  jobs: PublicJob[],
   f: JobFilters,
   savedIds: ReadonlySet<string>,
-): ApiJob[] {
+): PublicJob[] {
   return jobs.filter((job) => {
     if (f.tier === 'free' && job.is_premium) return false
     if (f.tier === 'premium' && !job.is_premium) return false

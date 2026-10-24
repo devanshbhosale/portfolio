@@ -35,10 +35,10 @@ export async function proxy(request: NextRequest) {
 
   // Logged-in users never stay on /login (operators browse as jobseekers).
   if (pathname === '/login' && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/jobs', request.url))
   }
 
-  const isProtected = pathname.startsWith('/dashboard') || pathname.startsWith('/profile')
+  const isProtected = pathname.startsWith('/profile')
   if (isProtected && !user) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
@@ -52,5 +52,5 @@ export const config = {
   // / and /jobs are in the matcher so Supabase session refresh (token
   // rotation) runs on the highest-traffic pages too — without it, a rotated
   // refresh token set during an RSC render is dropped → silent logouts.
-  matcher: ['/', '/jobs/:path*', '/dashboard/:path*', '/profile', '/login'],
+  matcher: ['/', '/jobs/:path*', '/profile', '/login'],
 }

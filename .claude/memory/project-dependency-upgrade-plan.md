@@ -1,0 +1,24 @@
+---
+name: dependency-upgrade-plan
+description: 2026-09-26 full stack upgrade DEPLOYED + LIVE-VERIFIED — Next 16.3.6, React 19.3, TS 6.0.3, Tailwind 4.3, framer 13, eslint 9.39, vitest 5; preship SHIP WITH FIXES verdict honored (refcount + Logo ids fixed), pushed 8ec5929, all 14 live routes 200; TS 7 + ESLint 10 blocked by toolchain peers
+metadata:
+  node_type: memory
+  type: project
+  originSessionId: sess_9ac4821b-5461-40ba-94ca-faed772c048e
+---
+
+Full dependency upgrade EXECUTED 2026-09-26 (user: "execute all to latest stable, don't make mistakes"). Baseline was green at `63fa91d` (114 tests, lint, build). Seven local commits: `572e45d` tier-1 in-range bumps → `a8be332` framer-motion 13.4.4 + lucide-react 1.48.0 → `32d888d` Next 16.3.6 + React 19.3.0 + async-cookies/params + proxy.ts + eslint 9 flat config → `162a388`/`30c32a4` Tailwind 4.3.3 CSS-first @theme → `3222a2c` TypeScript 6.0.3 → `38add37` vitest 5.0.2.
+
+**Final stack:** Next 16.3.6, React 19.3.0, TS 6.0.3, Tailwind 4.3.3 (@tailwindcss/postcss, autoprefixer REMOVED), framer-motion 13.4.4, lucide-react 1.48.0, @supabase/ssr 0.12.7, supabase-js 2.117.2, zod 4.6.5, eslint 9.39.5, typescript-eslint 8.70.1, vitest 5.0.2, postcss 8.5.28, @types/node 26.
+
+**Code changes that mattered:** `lib/server.ts` createRouteClient now async (`await cookies()`) — 3 route call sites fixed to `await (await createRouteClient())`; `app/jobs/[id]/page.tsx` params → `Promise<{id}>` + await ×2; middleware.ts → proxy.ts with `export async function proxy`; `.eslintrc.json` → `eslint.config.mjs` (spread `eslint-config-next/core-web-vitals` which IS a native flat array; custom rules block must re-register `@typescript-eslint` plugin object itself); lint script `next lint` → `eslint .` (next lint REMOVED in 16); tsconfig target es5→es2017, downlevelIteration dropped; tailwind.config.ts deleted, palette moved to `@theme` in globals.css; class renames `shadow-sm`→`shadow-xs` (19), bare `rounded`→`rounded-sm` (10, bare rounded REMOVED in v4 = silent rounding loss), `outline-none`→`outline-hidden` (27).
+
+**Two hard toolchain blocks (verified empirically, don't retry):**
+1. **ESLint 10 unrunnable**: eslint-config-next@16.3.6 pins nested eslint-plugin-react@7.37.5 (no newer exists; peers only `^9.7`); crashes on eslint 10 with `contextOrFilename.getFilename is not a function`. Ceiling = eslint 9.39.5. Revisit when eslint-plugin-react ships an eslint-10 build.
+2. **TypeScript 7 refused**: typescript-eslint 8.70.1 peers `typescript <6.1.0`; npm ERESOLVE refuses TS 7. Ceiling = TS 6.0.3 (typechecks clean after tsconfig modernization). Revisit when typescript-eslint lifts the cap.
+
+**Gates at finish:** 114/114 tests, lint 0/0 (the 13 react-hooks v7 warnings were subsequently FIXED properly and both rules restored to `error` — see below), production build green on Turbopack, dev smoke all-pass: 14 routes 200, unauth /dashboard → 307 /login?next= (proxy works), CSP + X-Frame-Options headers intact, dynamic /jobs/[id] 200 with async params.
+
+**Lint-flag refactor (commit `cbfca86`, all set-state-in-effect + purity flags cleared, rules back at error):** lib/savedJobs.ts gained a subscribe/notify external-store bridge (`subscribeJobMemory`, cached referentially-stable snapshots, per-jobId boolean `.has()` caches) consumed via `useSyncExternalStore` in ApplyButton/SaveHeart/jobs page — hearts + Saved tier + recents now sync cross-tab with no prop plumbing; SaveHeart's `ready` gate and `onToggle` dropped as redundant. jobs/page.tsx: JobsPageContent inside Suspense, filters lazy-init from `useSearchParams`, recents written via lib `writeRecents`. Dashboard: module-level `fetchDashboardData`, docs-shaped async effect with cancelled guard. WithdrawalModal: render-adjust pattern replaces the effect. PricingPlans: polling guard is a ref. Clock reads isolated in new `lib/freshness.ts` (`nowMs`/`weekAgoIso`/`isFeaturedNow`) — if the React Compiler is ever enabled, audit those call sites first.
+
+**PUSHED + LIVE 2026-09-26** (`8ec5929`): all 14 routes 200 on jobkarbe.vercel.app, /dashboard 307→/login (proxy works live), CSP intact, /jobs prerender now ships the Suspense skeleton (proof of new deploy). Pre-ship agent verdict was SHIP WITH FIXES: fixed (1) storage-listener refcount in lib/savedJobs.ts subscribeJobMemory (listeners.size===1 add / ===0 remove) and (2) Logo.tsx duplicate SVG gradient ids via hydration-stable useId, strip non-alphanumerics, ONE useId call at hook level (per-call gid() would give defs and refs different ids). Follow-ups NOT done (reviewer non-blocking): jsdom tests for the savedJobs external-store bridge; the PricingPlans 30s poll loop not aborted on unmount (pre-existing). `npm update` is broken in this repo (npm arbiter bug `edgesOut of null`, reproduces after `npm install`) — use explicit `npm install pkg@latest` instead. Dev server left running on :3000.

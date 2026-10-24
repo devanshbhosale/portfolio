@@ -19,7 +19,7 @@ export default function SignupPage() {
   const [needsConfirmation, setNeedsConfirmation] = useState(false)
 
   useEffect(() => {
-    if (user && !needsConfirmation) router.push('/dashboard')
+    if (user && !needsConfirmation) router.push('/jobs')
   }, [user, needsConfirmation, router])
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -11,18 +11,7 @@ export default function Navbar() {
   const { user, logout, authLoading } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const dashboardLink = { href: '/dashboard', label: 'Referral' }
-
-  const navLinks = user
-    ? [
-        { href: '/jobs', label: 'Browse Jobs' },
-        { href: '/pricing', label: 'Premium' },
-        dashboardLink,
-      ]
-    : [
-        { href: '/jobs', label: 'Browse Jobs' },
-        { href: '/pricing', label: 'Premium' },
-      ]
+  const navLinks = [{ href: '/jobs', label: 'Browse Jobs' }]
 
   const handleLogout = async () => {
     await logout()

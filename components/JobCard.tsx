@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { MapPin, Briefcase, IndianRupee, Tag, Star, Crown } from 'lucide-react'
+import { MapPin, Briefcase, IndianRupee, Tag, Star } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { isFeaturedNow } from '@/lib/freshness'
 import type { PublicJob } from '@/lib/database.types'
@@ -9,13 +9,14 @@ import type { PublicJob } from '@/lib/database.types'
 interface JobCardProps {
   job: PublicJob
   index?: number
+  /** Highlights the card as a Featured (is_premium) listing. */
   isPremium?: boolean
   /** Optional overlay action (Save heart) rendered above the card's link. */
   action?: ReactNode
 }
 
 export default function JobCard({ job, index = 0, isPremium = false, action }: JobCardProps) {
-  const featured = isFeaturedNow(job)
+  const featured = isFeaturedNow(job) || isPremium
 
   return (
     <motion.div
@@ -39,11 +40,6 @@ export default function JobCard({ job, index = 0, isPremium = false, action }: J
             {featured && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                 <Star size={12} aria-hidden /> Featured
-              </span>
-            )}
-            {isPremium && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                <Crown size={12} aria-hidden /> Premium
               </span>
             )}
           </div>

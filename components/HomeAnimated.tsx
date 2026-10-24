@@ -4,7 +4,7 @@
 // server component tree (React Client Manifest error), so app/page.tsx keeps
 // only data fetching and renders this component for the hero + features.
 import { motion } from 'framer-motion'
-import { ArrowRight, ShieldCheck, Users, Gift } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Users, Heart } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import DecodeHeading from '@/components/DecodeHeading'
 import HomeSearch from '@/components/HomeSearch'
@@ -38,7 +38,7 @@ export default function HomeAnimated() {
             transition={{ delay: 0.2, duration: 0.6 }}
             className="mt-6 text-lg md:text-xl text-gray-600 max-w-2xl mx-auto"
           >
-            Jobkarbe brings fresh blue-collar job listings with salary details where employers share them. Browse free and apply directly. Refer friends and earn when they go premium.
+            Jobkarbe brings fresh blue-collar job listings with salary details where employers share them. Browse free and apply directly.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -49,7 +49,6 @@ export default function HomeAnimated() {
             <Button href="/jobs" size="lg" variant="primary" className="cta-sweep">
               Browse Jobs <ArrowRight size={18} className="ml-2" aria-hidden />
             </Button>
-            <Button href="/pricing" size="lg" variant="outline" className="cta-sweep">See Premium Plans</Button>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -66,7 +65,7 @@ export default function HomeAnimated() {
           <div className="grid md:grid-cols-3 gap-8">
             {[
               { icon: ShieldCheck, title: 'Verified Listings', desc: 'Every job is reviewed and approved by our team before going live.' },
-              { icon: Gift, title: 'Referral Rewards', desc: 'Earn 20%+ of every premium purchase made with your code. Earnings depend on purchases and are not guaranteed income.' },
+              { icon: Heart, title: 'Save Jobs', desc: 'Tap the heart on any listing to keep it handy and come back to it later.' },
               { icon: Users, title: 'Fresh Listings', desc: 'New opportunities added regularly, so there is always something new.' },
             ].map((feature, i) => (
               <motion.div

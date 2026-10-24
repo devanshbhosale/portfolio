@@ -6,14 +6,14 @@ import FaqAccordion, { type FaqItem } from '@/components/FaqAccordion'
 export const metadata: Metadata = {
   title: 'FAQ',
   description:
-    'Answers to common questions about Jobkarbe: browsing jobs, premium plans, referral rewards, withdrawals, payments, and refunds.',
+    'Answers to common questions about Jobkarbe: browsing jobs, featured listings, accounts, and applications.',
 }
 
 const faqs: FaqItem[] = [
   {
     question: 'What is Jobkarbe?',
     answer:
-      'Jobkarbe brings blue-collar and entry-level job listings from public company career pages into one place, and pays you for spreading the word. Every account gets a referral code that earns you a commission when someone buys a premium plan with it.',
+      'Jobkarbe brings blue-collar and entry-level job listings from public company career pages into one place so you can search and apply directly. It is free, and always will be.',
   },
   {
     question: 'Do I need an account to browse jobs?',
@@ -21,34 +21,14 @@ const faqs: FaqItem[] = [
       'No. Browsing and searching every listing is free. Creating a free account lets you save jobs for later and track which ones you have already applied to.',
   },
   {
-    question: 'What does a premium plan unlock?',
+    question: 'What does a Featured badge mean?',
     answer:
-      'Premium unlocks the apply button and contact details for premium listings (the ones marked with a crown), including direct HR contacts, salary details where employers share them, and the full description. Free listings always stay free to apply to.',
+      'Featured listings are roles our team has highlighted. Every listing on Jobkarbe, featured or not, shows its full details and apply link for free.',
   },
   {
-    question: 'How much do premium plans cost?',
+    question: 'Is Jobkarbe really free?',
     answer:
-      'Weekly is ₹99, Monthly is ₹199, and Lifetime is ₹999 (one-time, never expires). You can compare every plan on the Premium Plans page.',
-  },
-  {
-    question: 'How does the referral program work?',
-    answer:
-      'Every account gets a unique referral code, shown in your Referral Dashboard. When someone signs up and buys a premium plan using your code, you earn a commission: 20% on Weekly and Monthly plans, and 25% on the Lifetime plan. Earnings depend on purchases made with your code and are not guaranteed income.',
-  },
-  {
-    question: 'When can I withdraw my referral earnings?',
-    answer:
-      'Once your lifetime earnings cross ₹500, connect your bank account in the Referral Dashboard and request a withdrawal. We review each request before paying out.',
-  },
-  {
-    question: 'How do I pay for a premium plan?',
-    answer:
-      'Payments are processed securely through Dodo Payments. UPI, cards, net banking, and popular wallets are all supported. You complete the payment on a secure hosted checkout page and are brought back to Jobkarbe.',
-  },
-  {
-    question: 'Are refunds available?',
-    answer:
-      'Premium access is delivered instantly, but we do refund: a wrong or duplicate charge, a payment where premium access was never unlocked, or a technical defect that prevents access you paid for. Requests are reviewed within 48 hours and refunded within 5 to 7 working days to your original payment method. Email jobkarbe@gmail.com or use our grievance page.',
+      'Yes. Browsing, searching, and applying are all free. The site is supported by advertising, so jobseekers never pay us anything.',
   },
   {
     question: 'Where do the job listings come from?',
@@ -68,12 +48,17 @@ const faqs: FaqItem[] = [
   {
     question: 'Do I pay to apply for jobs?',
     answer:
-      'No. The premium fee covers access to platform features, never a job application. Applying to any job is free once you can see its details, and legitimate employers never ask candidates for money.',
+      'No. Applying is always free, and legitimate employers never ask candidates for money.',
+  },
+  {
+    question: 'Why do I see ads?',
+    answer:
+      'Ads keep Jobkarbe free to use. They cover the cost of running the service without charging jobseekers.',
   },
   {
     question: 'Is Jobkarbe legitimate?',
     answer:
-      'Yes. Jobkarbe charges for platform access only, never for job applications, and every listing is reviewed by our team before going live. You can see exactly who operates the service and how to raise a complaint on our grievance page.',
+      'Yes. Every listing is reviewed by our team before going live, applying is always free, and you can see exactly who operates the service and how to raise a complaint on our grievance page.',
   },
 ]
 
@@ -82,7 +67,7 @@ export default function FaqPage() {
     <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
       <PageHeader
         title="Frequently Asked Questions"
-        subtitle="Everything people usually ask about Jobkarbe: jobs, plans, and referral rewards."
+        subtitle="Everything people usually ask about Jobkarbe: jobs, applications, and accounts."
       />
 
       <FaqAccordion items={faqs} />

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Post-deploy smoke check — run after every deploy (node scripts/smoke.mjs).
-// Guards the paywall guarantee and the trust pages. Exits non-zero on any
-// failure so it can gate a deploy pipeline.
+// Guards the fully-unlocked guarantee (the paywall was removed 2026-10-24:
+// every row must carry its complete fields) and the trust pages. Exits
+// non-zero on any failure so it can gate a deploy pipeline.
 //
 // Env: SITE_URL (default https://jobkarbe.vercel.app),
 //      SUPABASE_URL + SUPABASE_ANON_KEY (or NEXT_PUBLIC_ variants) for the
@@ -18,13 +19,26 @@ const check = (name, ok, detail = '') => {
 }
 
 // 1) Trust/SEO surfaces respond.
-for (const path of ['/terms', '/privacy', '/faq', '/contact', '/grievance', '/opengraph-image', '/api/jobs']) {
+for (const path of ['/terms', '/privacy', '/faq', '/contact', '/grievance', '/opengraph-image', '/api/jobs', '/ads.txt', '/sitemap.xml']) {
   try {
     const res = await fetch(`${SITE}${path}`)
     check(`GET ${path} → 200`, res.status === 200, `status ${res.status}`)
   } catch (e) {
     check(`GET ${path} → 200`, false, String(e))
   }
+}
+
+// 1a) /pricing retired with the payment system: it must 301 to /jobs.
+try {
+  const res = await fetch(`${SITE}/pricing`, { redirect: 'manual' })
+  const location = res.headers.get('location') ?? ''
+  check(
+    '/pricing redirects to /jobs',
+    (res.status === 301 || res.status === 308) && new URL(location, SITE).pathname === '/jobs',
+    `status ${res.status}, location ${location}`,
+  )
+} catch (e) {
+  check('/pricing redirects to /jobs', false, String(e))
 }
 
 // 1b) Compliance copy is live where it must be.
@@ -37,27 +51,41 @@ async function checkContains(path, needle, name) {
     check(name, false, String(e))
   }
 }
-await checkContains('/pricing', 'Launch price', '/pricing shows the launch-price badge')
-await checkContains('/pricing', 'review refund requests within 48 hours', '/pricing shows the refund ladder')
 await checkContains('/signup', 'I am 18 or older', '/signup has the 18+/consent checkbox')
 await checkContains('/terms', 'operatorOP', '/terms names the operator')
 await checkContains('/terms', 'Mumbai', '/terms carries governing-law venue')
-await checkContains('/privacy', 'IFSC', '/privacy discloses bank-data collection')
-await checkContains('/privacy', 'UPI ID', '/privacy discloses UPI payout collection')
 await checkContains('/grievance', '48 hours', '/grievance carries the acknowledgement SLA')
 
-// 2) /api/jobs serves NO premium fields to an anonymous caller.
+// 1c) Ad-surface posture: CSP must allow AdSense script origins (regression
+// guard — a header refactor that drops them silently kills every ad).
+try {
+  const res = await fetch(SITE)
+  const csp = res.headers.get('content-security-policy') ?? ''
+  check(
+    'CSP allows googlesyndication scripts',
+    csp.includes('pagead2.googlesyndication.com'),
+    csp ? 'csp present, origin missing' : 'no CSP header',
+  )
+} catch (e) {
+  check('CSP allows googlesyndication scripts', false, String(e))
+}
+
+// 2) /api/jobs serves COMPLETE rows to an anonymous caller — the old
+// paywall redaction is gone; a premium row missing its fields means the
+// redaction crept back in (values may be null, the keys must exist).
 try {
   const res = await fetch(`${SITE}/api/jobs`)
   const body = await res.json()
   const jobs = body.jobs ?? []
   check('/api/jobs returns jobs', jobs.length > 0, `${jobs.length} rows`)
-  const leaks = jobs.filter(
-    (j) => j.is_premium && ('apply_url' in j || 'description' in j || 'source_link' in j),
+  const premium = jobs.filter((j) => j.is_premium)
+  check('premium rows present in page 1 sample', premium.length > 0, `${premium.length} premium rows`)
+  const locked = jobs.filter(
+    (j) => j.is_premium && (!('apply_url' in j) || !('description' in j) || !('source_link' in j)),
   )
-  check('/api/jobs locked rows carry no apply_url/description/source_link', leaks.length === 0, `${leaks.length} leaks`)
+  check('premium rows carry apply_url/description/source_link keys', locked.length === 0, `${locked.length} redacted`)
 } catch (e) {
-  check('/api/jobs locked rows clean', false, String(e))
+  check('premium rows fully unlocked', false, String(e))
 }
 
 // 2b) Smart search: filtered query → 200 with facets; suggestion invariant
@@ -90,11 +118,32 @@ try {
   check('garbage query → 200', false, String(e))
 }
 
-// 1c) Report-this-listing control is present on job detail pages (SSR).
+// 2d) A previously locked (premium) job detail page now carries full
+// JobPosting JSON-LD — the SEO win of removing the paywall.
 try {
   const res = await fetch(`${SITE}/api/jobs`)
   const body = await res.json()
-  const first = body.jobs?.find((j) => !j.is_premium) ?? body.jobs?.[0]
+  const premium = body.jobs?.find((j) => j.is_premium)
+  if (premium?.id) {
+    const detail = await fetch(`${SITE}/jobs/${premium.id}`)
+    const html = await detail.text()
+    check(
+      'premium /jobs/[id] carries JobPosting JSON-LD',
+      detail.status === 200 && html.includes('application/ld+json') && html.includes('JobPosting'),
+      `status ${detail.status}`,
+    )
+  } else {
+    check('premium /jobs/[id] carries JobPosting JSON-LD', false, 'no premium job to test')
+  }
+} catch (e) {
+  check('premium /jobs/[id] JSON-LD', false, String(e))
+}
+
+// 1e) Report-this-listing control is present on job detail pages (SSR).
+try {
+  const res = await fetch(`${SITE}/api/jobs`)
+  const body = await res.json()
+  const first = body.jobs?.[0]
   if (first?.id) {
     const detail = await fetch(`${SITE}/jobs/${first.id}`)
     const html = await detail.text()
