@@ -1,6 +1,10 @@
 # Ads Migration Plan — remove payments, go AdSense
 
-Date stamped: 2026-10-24. Approved plan (v2, review-loop hardened). Status: **EXECUTING**.
+Date stamped: 2026-10-24. Approved plan (v2, review-loop hardened). Status:
+**EXECUTED + LIVE-VERIFIED 2026-10-24, commit `a517124`** — smoke 26/26 green,
+tsc/lint/vitest(64)/build green, DODO_*/CRON_SECRET removed from Vercel.
+Go-live checklist when AdSense approves: set NEXT_PUBLIC_ADSENSE_CLIENT in
+Vercel → redeploy, fill real slot ids in lib/ads.ts, uncomment ads.txt line.
 
 Pre-flight verified (Supabase MCP, 2026-10-24): 0 active premium users, 1 historical
 purchase (the Sep-19 Rs 149 Weekly, expired), 0 unsettled commissions, 0 withdrawal

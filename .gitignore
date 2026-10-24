@@ -45,3 +45,6 @@ pricing-checkout.png
 
 # Supabase CLI cache (created by `npx supabase`)
 supabase/.temp/
+
+.vercel
+.env*

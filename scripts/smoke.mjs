@@ -64,7 +64,7 @@ try {
   check(
     'CSP allows googlesyndication scripts',
     csp.includes('pagead2.googlesyndication.com'),
-    csp ? 'csp present, origin missing' : 'no CSP header',
+    csp.includes('pagead2.googlesyndication.com') ? 'origin present' : csp ? 'csp present, origin missing' : 'no CSP header',
   )
 } catch (e) {
   check('CSP allows googlesyndication scripts', false, String(e))
