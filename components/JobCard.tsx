@@ -36,7 +36,7 @@ export default function JobCard({ job, index = 0, isPremium = false, action }: J
             <h3 className="line-clamp-2 pr-7 text-lg font-bold text-gray-900">{job.title}</h3>
             <p className="text-sm text-gray-600">{job.company}</p>
           </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
+          <div className="flex flex-col items-end gap-1 shrink-0 pr-9">
             {featured && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 whitespace-nowrap">
                 <Star size={12} aria-hidden /> Featured
